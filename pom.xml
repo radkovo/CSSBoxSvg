@@ -41,23 +41,13 @@
         <dependency>
             <groupId>net.sf.cssbox</groupId>
             <artifactId>cssbox</artifactId>
-            <version>4.11</version>
+            <version>4.15-SNAPSHOT</version>
         </dependency>
         <!-- http://mvnrepository.com/artifact/org.apache.xmlgraphics/batik-svg-dom -->
         <dependency>
             <groupId>org.apache.xmlgraphics</groupId>
             <artifactId>batik-svg-dom</artifactId>
             <version>1.8</version>  
-        </dependency>
-        <dependency>
-            <groupId>net.sourceforge.nekohtml</groupId>
-            <artifactId>nekohtml</artifactId>
-            <version>1.9.22</version>
-        </dependency>
-        <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
-            <version>2.11.0</version>
         </dependency>
         <dependency>
             <groupId>xml-apis</groupId>
@@ -68,11 +58,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.12</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.cssbox</groupId>
-            <artifactId>jstyleparser</artifactId>
-            <version>1.22</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

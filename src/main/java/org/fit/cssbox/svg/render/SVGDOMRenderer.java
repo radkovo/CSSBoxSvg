@@ -25,7 +25,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.batik.anim.dom.SVGDOMImplementation;
-
+import org.fit.cssbox.css.CSSUnits;
 import org.fit.cssbox.layout.BackgroundImage;
 import org.fit.cssbox.layout.BlockBox;
 import org.fit.cssbox.layout.Box;
@@ -175,7 +175,7 @@ public class SVGDOMRenderer implements BoxRenderer {
 //            backgroundStore = null;
 //            
 //        }
-        if (elem instanceof BlockBox && ((BlockBox) elem).getOverflow() != BlockBox.OVERFLOW_VISIBLE) {
+        if (elem instanceof BlockBox && ((BlockBox) elem).getOverflowX() != BlockBox.OVERFLOW_VISIBLE) {
             Rectangle cb = elem.getClippedContentBounds();
             String clip = "cssbox-clip-" + idcounter;
             Element clipPath = createElement("clipPath");
@@ -370,6 +370,10 @@ public class SVGDOMRenderer implements BoxRenderer {
         writeFooter();
     }
 
+    private String colorString(TermColor color) {
+        return colorString(CSSUnits.convertColor(color.getValue()));
+    }
+
     private String colorString(Color color) {
         return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
     }
@@ -499,12 +503,12 @@ public class SVGDOMRenderer implements BoxRenderer {
         String cString1;
         String cString2;
         if (ccc1 != null) {
-            cString1 = colorString(ccc1.getValue());
+            cString1 = colorString(ccc1);
         } else {
             cString1 = "none";
         }
         if (ccc2 != null) {
-            cString2 = colorString(ccc2.getValue());
+            cString2 = colorString(ccc2);
         } else {
             cString2 = "none";
         }
@@ -539,13 +543,12 @@ public class SVGDOMRenderer implements BoxRenderer {
      */
     private void writeBorderSVG(ElementBox eb, Point a, Point b, String side, int width) {
 
-        CSSProperty.BorderColor bclr = eb.getStyle().getProperty("border-" + side + "-color");
         TermColor tclr = eb.getStyle().getValue(TermColor.class, "border-" + side + "-color");
         CSSProperty.BorderStyle bst = eb.getStyle().getProperty("border-" + side + "-style");
-        if (bst != CSSProperty.BorderStyle.HIDDEN && bclr != CSSProperty.BorderColor.TRANSPARENT) {
+        if (bst != CSSProperty.BorderStyle.HIDDEN && (tclr == null || !tclr.isTransparent())) {
             Color clr = null;
             if (tclr != null) {
-                clr = tclr.getValue();
+                clr = CSSUnits.convertColor(tclr.getValue());
             }
             if (clr == null) {
                 clr = eb.getVisualContext().getColor();
