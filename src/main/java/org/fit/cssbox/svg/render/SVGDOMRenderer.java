@@ -30,6 +30,7 @@ import org.fit.cssbox.layout.BackgroundImage;
 import org.fit.cssbox.layout.BlockBox;
 import org.fit.cssbox.layout.Box;
 import org.fit.cssbox.layout.LengthSet;
+import org.fit.cssbox.layout.ListItemBox;
 import org.fit.cssbox.layout.ReplacedContent;
 import org.fit.cssbox.layout.ReplacedImage;
 import org.fit.cssbox.layout.ReplacedText;
@@ -296,6 +297,12 @@ public class SVGDOMRenderer implements BoxRenderer {
         }
 
         getCurrentElem().appendChild(backgroundStore);
+    }
+
+    @Override
+    public void renderMarker(ListItemBox elem)
+    {
+        // TODO implement the marker rendering
     }
 
     public void renderTextContent(TextBox text) {
