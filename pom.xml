@@ -41,7 +41,7 @@
         <dependency>
             <groupId>net.sf.cssbox</groupId>
             <artifactId>cssbox</artifactId>
-            <version>4.15-SNAPSHOT</version>
+            <version>4.16-SNAPSHOT</version>
         </dependency>
         <!-- http://mvnrepository.com/artifact/org.apache.xmlgraphics/batik-svg-dom -->
         <dependency>
