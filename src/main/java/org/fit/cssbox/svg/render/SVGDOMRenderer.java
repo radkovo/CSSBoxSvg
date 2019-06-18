@@ -302,25 +302,138 @@ public class SVGDOMRenderer implements BoxRenderer {
     @Override
     public void renderMarker(ListItemBox elem)
     {
-        // TODO implement the marker rendering
+    	 if (elem.getMarkerImage() != null)
+         {
+             if (!writeMarkerImage(elem))
+                 writeBullet(elem);
+         }
+         else
+             writeBullet(elem);
     }
 
+    private boolean writeMarkerImage(ListItemBox lb)
+    {
+        VisualContext ctx = lb.getVisualContext();
+        int ofs = lb.getFirstInlineBoxBaseline();
+        if (ofs == -1)
+            ofs = ctx.getBaselineOffset(); //use the font baseline
+        int x = (int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm());
+        int y = lb.getAbsoluteContentY() + ofs;
+        BufferedImage img = lb.getMarkerImage().getBufferedImage();
+        if (img != null)
+        {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            try
+            {
+                ImageIO.write(img, "png", os);
+            } catch (IOException e) {
+                out.println("<!-- I/O error: " + e.getMessage() + " -->");
+            }
+            char[] data = Base64Coder.encode(os.toByteArray());
+            String imgdata = "data:image/png;base64," + new String(data);
+            int iw = img.getWidth();
+            int ih = img.getHeight();
+            int ix = x - iw;
+            int iy = y - ih;
+            //out.println("<image x=\"" + ix + "\" y=\"" + iy + "\" width=\"" + iw + "\" height=\"" + ih + "\" xlink:href=\"" + imgdata + "\" />");
+            Element image = doc.createElementNS(svgNS, "image");
+            image.setAttributeNS(null, "x", Integer.toString(ix));
+            image.setAttributeNS(null, "y", Integer.toString(iy));
+            image.setAttributeNS(null, "width", Integer.toString(iw));
+            image.setAttributeNS(null, "height", Integer.toString(ih));
+            image.setAttributeNS(null, "xlink:href", imgdata);
+            getCurrentElem().appendChild(image);
+            return true;
+        }
+        else
+            return false;
+    }
+    
+    private void writeBullet(ListItemBox lb)
+    {
+        if (lb.hasVisibleBullet())
+        {
+            VisualContext ctx = lb.getVisualContext();
+            int x = (int) Math.round(lb.getAbsoluteContentX() - 1.2 * ctx.getEm());
+            int y = (int) Math.round(lb.getAbsoluteContentY() + 0.5 * ctx.getEm());
+            int r = (int) Math.round(0.4 * ctx.getEm());
+            
+            String tclr = colorString(ctx.getColor());
+            String style = "";
+            
+            switch (lb.getListStyleType())
+            {
+                case "circle":
+                    style = "fill:none;fill-opacity:1;stroke:" + tclr + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
+                    //out.println("<circle style=\"" + style + "\" cx=\"" + (x + r / 2) + "\" cy=\"" + (y + r / 2) + "\" r=\"" + (r / 2) + "\" />");
+                    Element circle = createElement("circle");
+                    circle.setAttributeNS(null, "cx", Integer.toString(x + r / 2));
+                    circle.setAttributeNS(null, "cy", Integer.toString(y + r / 2));
+                    circle.setAttributeNS(null, "r", Integer.toString(r / 2));
+                    circle.setAttributeNS(null, "style", style);
+                    getCurrentElem().appendChild(circle);
+                    break;
+                case "square":
+                    style = "fill:" + tclr +";fill-opacity:1;stroke:" + tclr + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
+                    //out.println("<rect style=\"" + style + "\" x=\"" + x + "\" y=\"" + y + "\" width=\"" + r + "\" height=\"" + r + "\" />");
+                    Element rect = createElement("rect");
+                    rect.setAttributeNS(null, "x", Integer.toString(x));
+                    rect.setAttributeNS(null, "y", Integer.toString(y));
+                    rect.setAttributeNS(null, "width", Integer.toString(r));
+                    rect.setAttributeNS(null, "height", Integer.toString(r));
+                    rect.setAttributeNS(null, "style", style);
+                    getCurrentElem().appendChild(rect);
+                    break;
+                case "disc":
+                    style = "fill:" + tclr +";fill-opacity:1;stroke:" + tclr + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
+                    //out.println("<circle style=\"" + style + "\" cx=\"" + (x + r / 2) + "\" cy=\"" + (y + r / 2) + "\" r=\"" + (r / 2) + "\" />");
+                    Element disc = createElement("circle");
+                    disc.setAttributeNS(null, "cx", Integer.toString(x + r / 2));
+                    disc.setAttributeNS(null, "cy", Integer.toString(y + r / 2));
+                    disc.setAttributeNS(null, "r", Integer.toString(r / 2));
+                    disc.setAttributeNS(null, "style", style);
+                    getCurrentElem().appendChild(disc);
+                    break;
+                default:
+                    
+                    int baseline = lb.getFirstInlineBoxBaseline();
+                    if (baseline == -1)
+                        baseline = ctx.getBaselineOffset(); //use the font baseline
+                    style = textStyle(ctx) + ";text-align:end;text-anchor:end";
+                    Element txt = doc.createElementNS(svgNS, "text");
+                    txt.setAttributeNS(null, "x", Integer.toString((int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm())));
+                    txt.setAttributeNS(null, "y", Integer.toString(( lb.getAbsoluteContentY() + baseline)));
+                    //txt.setAttributeNS(null, "width", Integer.toString(b.width));
+                    //txt.setAttributeNS(null, "height", Integer.toString(b.height));
+                    txt.setAttributeNS(null, "style", style);
+                    txt.setTextContent(lb.getMarkerText());
+                    getCurrentElem().appendChild(txt);
+                    
+                    //writeText((int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm()), lb.getAbsoluteContentY() + baseline, style, lb.getMarkerText());
+                    break;
+            }
+        }
+    }
+    
+    private String textStyle(VisualContext ctx)
+    {
+        String style = "font-size:" + ctx.getFontSize() + "pt;" + 
+                       "font-weight:" + (ctx.getFont().isBold()?"bold":"normal") + ";" + 
+                       "font-style:" + (ctx.getFont().isItalic()?"italic":"normal") + ";" +
+                       "font-family:" + ctx.getFont().getFamily() + ";" +
+                       "fill:" + colorString(ctx.getColor()) + ";" +
+                       "stroke:none";
+        if (!ctx.getTextDecoration().isEmpty())
+            style += ";text-decoration:" + ctx.getTextDecorationString();
+        return style;
+    }
+    
     public void renderTextContent(TextBox text) {
         Rectangle b = text.getAbsoluteBounds();
         VisualContext ctx = text.getVisualContext();
-
-        // priprava stylovacich parametru
-        String style = "font-size:" + ctx.getFontSize() + "pt;"
-                + "font-weight:" + (ctx.getFont().isBold() ? "bold" : "normal") + ";"
-                + "font-style:" + (ctx.getFont().isItalic() ? "italic" : "normal") + ";"
-                + "font-family:" + ctx.getFont().getFamily() + ";"
-                + "fill:" + colorString(ctx.getColor()) + ";"
-                + "stroke:none";
-
-        if (!ctx.getTextDecoration().isEmpty()) {
-            style += ";text-decoration:" + ctx.getTextDecorationString();
-        }
-        // generovani SVG elementu
+        
+        String style = textStyle(ctx);
+        
         Element txt = doc.createElementNS(svgNS, "text");
         txt.setAttributeNS(null, "x", Integer.toString(b.x));
         txt.setAttributeNS(null, "y", Integer.toString((b.y + text.getBaselineOffset())));
