@@ -167,8 +167,8 @@ public class SVGDOMRenderer implements BoxRenderer {
 
     public void startElementContents(ElementBox elem) {
 
-        Element g;
-        g = createElement("g");
+        boolean useGroup = false; 
+        final Element g = createElement("g");
 //        if (backgroundStore != null) {
 //            g.appendChild(backgroundStore);
 //            //elemStack.pop();
@@ -180,34 +180,36 @@ public class SVGDOMRenderer implements BoxRenderer {
             String clip = "cssbox-clip-" + idcounter;
             Element clipPath = createElement("clipPath");
             clipPath.setAttributeNS(null, "id", clip);
-
             clipPath.appendChild(createRect(cb.x, cb.y, cb.width, cb.height, ""));
             getCurrentElem().appendChild(clipPath);
 
             g.setAttributeNS(null, "id", "cssbox-obj-" + (idcounter++));
             g.setAttributeNS(null, "clip-path", "url(#" + clip + ")");
+            useGroup = true;
         }
 
         Transform t = new Transform();
         String tm = t.createTransform(elem);
         if (!tm.equals("")) {
             g.setAttributeNS(null, "transform", tm);
+            useGroup = true;
         }
 
         String opacity = elem.getStylePropertyValue("opacity");
         if (opacity != "") {
             g.setAttributeNS(null, "opacity", opacity);
+            useGroup = true;
         }
-        elemStack.push(g);
+        
+        if (useGroup)
+            elemStack.push(g);
     }
 
     public void finishElementContents(ElementBox elem) {
         if (elemStack.peek() != svgRoot) {
-            Element buf;
-            buf = elemStack.pop();
+            Element buf = elemStack.pop();
             getCurrentElem().appendChild(buf);
         }
-
     }
 
     public void renderElementBackground(ElementBox eb) {
