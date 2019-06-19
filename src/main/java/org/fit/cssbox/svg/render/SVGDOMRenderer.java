@@ -40,7 +40,6 @@ import org.fit.cssbox.misc.Base64Coder;
 import org.fit.cssbox.render.BoxRenderer;
 import org.fit.cssbox.svg.layout.Border;
 import org.fit.cssbox.svg.layout.CornerRadius;
-import org.fit.cssbox.svg.layout.DPoint;
 import org.fit.cssbox.svg.layout.GradientStop;
 import org.fit.cssbox.svg.layout.LinearGradient;
 import org.fit.cssbox.svg.layout.RadialGradient;
@@ -245,7 +244,7 @@ public class SVGDOMRenderer implements BoxRenderer {
                     try {
                         ImageIO.write(img, "png", os);
                     } catch (IOException e) {
-                        out.println("<!-- I/O error: " + e.getMessage() + " -->");
+                        //out.println("<!-- I/O error: " + e.getMessage() + " -->");
                     }
                     char[] data = Base64Coder.encode(os.toByteArray());
                     String imgdata = "data:image/png;base64," + new String(data);
@@ -395,21 +394,11 @@ public class SVGDOMRenderer implements BoxRenderer {
                     getCurrentElem().appendChild(disc);
                     break;
                 default:
-                    
                     int baseline = lb.getFirstInlineBoxBaseline();
                     if (baseline == -1)
                         baseline = ctx.getBaselineOffset(); //use the font baseline
                     style = textStyle(ctx) + ";text-align:end;text-anchor:end";
-                    Element txt = doc.createElementNS(svgNS, "text");
-                    txt.setAttributeNS(null, "x", Integer.toString((int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm())));
-                    txt.setAttributeNS(null, "y", Integer.toString(( lb.getAbsoluteContentY() + baseline)));
-                    //txt.setAttributeNS(null, "width", Integer.toString(b.width));
-                    //txt.setAttributeNS(null, "height", Integer.toString(b.height));
-                    txt.setAttributeNS(null, "style", style);
-                    txt.setTextContent(lb.getMarkerText());
-                    getCurrentElem().appendChild(txt);
-                    
-                    //writeText((int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm()), lb.getAbsoluteContentY() + baseline, style, lb.getMarkerText());
+                    addText(getCurrentElem(), (int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm()), lb.getAbsoluteContentY() + baseline, style, lb.getMarkerText());
                     break;
             }
         }
@@ -425,25 +414,60 @@ public class SVGDOMRenderer implements BoxRenderer {
                        "stroke:none";
         if (!ctx.getTextDecoration().isEmpty())
             style += ";text-decoration:" + ctx.getTextDecorationString();
+        if (ctx.getLetterSpacing() > 0.0001)
+            style += ";letter-spacing:" + ctx.getLetterSpacing() + "px";
         return style;
     }
     
     public void renderTextContent(TextBox text) {
         Rectangle b = text.getAbsoluteBounds();
-        VisualContext ctx = text.getVisualContext();
-        
-        String style = textStyle(ctx);
-        
-        Element txt = doc.createElementNS(svgNS, "text");
-        txt.setAttributeNS(null, "x", Integer.toString(b.x));
-        txt.setAttributeNS(null, "y", Integer.toString((b.y + text.getBaselineOffset())));
-        txt.setAttributeNS(null, "width", Integer.toString(b.width));
-        txt.setAttributeNS(null, "height", Integer.toString(b.height));
-        txt.setAttributeNS(null, "style", style);
-        txt.setTextContent(text.getText());
-        getCurrentElem().appendChild(txt);
+        String style = textStyle(text.getVisualContext());
+        if (text.getWordSpacing() == null && text.getExtraWidth() == 0)
+            addText(getCurrentElem(), b.x, b.y + text.getBaselineOffset(), b.width, b.height, style, text.getText());
+        else
+            addTextByWords(getCurrentElem(), b.x, b.y + text.getBaselineOffset(), b.width, b.height, style, text);
     }
 
+    private void addText(Element parent, int x, int y, String style, String text)
+    {
+        //out.print("<text x=\"" + x + "\" y=\"" + y + "\" style=\"" + style + "\">" + htmlEntities(text) + "</text>");
+        Element txt = doc.createElementNS(svgNS, "text");
+        txt.setAttributeNS(null, "x", Integer.toString(x));
+        txt.setAttributeNS(null, "y", Integer.toString(y));
+        txt.setAttributeNS(null, "style", style);
+        txt.setTextContent(text);
+        parent.appendChild(txt);
+    }
+    
+    private void addText(Element parent, int x, int y, int width, int height, String style, String text)
+    {
+        //out.print("<text x=\"" + x + "\" y=\"" + y + "\" width=\"" + width + "\" height=\"" + height + "\" style=\"" + style + "\">" + htmlEntities(text) + "</text>");
+        Element txt = doc.createElementNS(svgNS, "text");
+        txt.setAttributeNS(null, "x", Integer.toString(x));
+        txt.setAttributeNS(null, "y", Integer.toString(y));
+        txt.setAttributeNS(null, "width", Integer.toString(width));
+        txt.setAttributeNS(null, "height", Integer.toString(height));
+        txt.setAttributeNS(null, "style", style);
+        txt.setTextContent(text);
+        parent.appendChild(txt);
+    }
+    
+    private void addTextByWords(Element parent, int x, int y, int width, int height, String style, TextBox text)
+    {
+        final String[] words = text.getText().split(" ");
+        if (words.length > 0)
+        {
+            Element g = doc.createElementNS(svgNS, "g");
+            final int[][] offsets = text.getWordOffsets(words);
+            for (int i = 0; i < words.length; i++)
+                addText(g, x + offsets[i][0], y, offsets[i][1], height, style, words[i]);
+            parent.appendChild(g);
+        }
+        else
+            addText(parent, x, y, width, height, style, text.getText());
+    }
+
+    
     public void renderReplacedContent(ReplacedBox box) {
         ReplacedContent cont = box.getContentObj();
         if (cont != null) {
@@ -833,35 +857,6 @@ public class SVGDOMRenderer implements BoxRenderer {
 
         // vyggenerovani SVG elementu s gradientem jako pozadi
         getCurrentElem().appendChild(createRect(ix, iy, iw, ih, style));
-    }
-
-    private void addText(String text, int x, int y, String color) {
-        addText(text, (double) x, (double) y, color);
-    }
-
-    private void addText(String text, double x, double y, String color) {
-        Element textElem;
-        String style = "font-size: 18pt;"
-                + "font-weight:normal;"
-                + "font-variant: normal ;"
-                + "font-family: Arial;"
-                + "fill:" + color + ";"
-                + "stroke:none";
-
-        textElem = doc.createElementNS(svgNS, "text");
-        textElem.setAttributeNS(null, "x", Double.toString(x));
-        textElem.setAttributeNS(null, "y", Double.toString(y));
-        textElem.setAttributeNS(null, "style", style);
-        textElem.setTextContent(text);
-        getCurrentElem().appendChild(textElem);
-    }
-
-    private void addText(String text, Point a, String color) {
-        addText(text, (double) a.x, (double) a.y, color);
-    }
-
-    private void addText(String text, DPoint a, String color) {
-        addText(text, (double) a.x, (double) a.y, color);
     }
 
     public Element createPath(String dPath, String fill, String stroke, int strokeWidth) {
