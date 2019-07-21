@@ -1,3 +1,4 @@
+
 package org.fit.cssbox.svg.layout;
 
 import java.awt.Rectangle;
@@ -9,8 +10,8 @@ import java.util.Collections;
  *
  * @author safar
  */
-public class RadialGradient {
-
+public class RadialGradient
+{
     public ArrayList<GradientStop> data;
 
     // prepinac urcujici, zda se jedna o kruznici nebo elipsu
@@ -42,7 +43,8 @@ public class RadialGradient {
     public double newHeight;
     public double newWidth;
 
-    public enum radLengths {
+    public enum radLengths
+    {
         CLOSEST_CORNER, CLOSEST_SIDE, FARTHEST_CORNER, FARTHEST_SIDE
     }
 
@@ -51,7 +53,8 @@ public class RadialGradient {
      *
      * @param rect
      */
-    public RadialGradient(Rectangle rect) {
+    public RadialGradient(Rectangle rect)
+    {
         isCircle = false;
         this.rect = rect;
         newRect = new Rectangle();
@@ -61,11 +64,10 @@ public class RadialGradient {
         newRect.height = rect.height;
     }
 
-    
     ///////////////////////////////
     /// vypocet pro elipticky tvar gradientu
     ///////////////////////////////
-    
+
     /**
      * tato metoda slouzi k vypoctu SVG parametru podle zadanych parametru z CSS
      * radialniho gradientu probiha zde prepocet z absolutnich vzdalenosti v
@@ -76,7 +78,8 @@ public class RadialGradient {
      * @param sx
      * @param sy
      */
-    public void setEllipseData(double rx, double ry, int sx, int sy) {
+    public void setEllipseData(double rx, double ry, int sx, int sy)
+    {
         isCircle = false;
 
         cx = (double) sx / (double) rect.width * 100;
@@ -88,11 +91,14 @@ public class RadialGradient {
         yAxis = (double) ry / (double) rect.height * 100;
 
         // kvuli odlisnosti SVG a CSS gradientu (viz technicka zprava) je nutne dopocitat rozmery elementu, na ktery bude gradient apliovan
-        if (ry > rx) {
+        if (ry > rx)
+        {
             r = xAxis;
             newHeight = rect.width * (double) ry / (double) rx;
             newWidth = rect.width;
-        } else {
+        }
+        else
+        {
             r = yAxis;
             newWidth = rect.height * (double) rx / (double) ry;
             newHeight = rect.height;
@@ -107,8 +113,10 @@ public class RadialGradient {
      * @param sxp
      * @param syp
      */
-    public void setEllipseDataPercent(double rxp, double ryp, int sxp, int syp) {
-        setEllipseData(rxp * rect.width / 100, ryp * rect.height / 100, sxp * rect.width / 100, syp * rect.height / 100);
+    public void setEllipseDataPercent(double rxp, double ryp, int sxp, int syp)
+    {
+        setEllipseData(rxp * rect.width / 100, ryp * rect.height / 100, sxp * rect.width / 100,
+                syp * rect.height / 100);
     }
 
     /**
@@ -121,7 +129,8 @@ public class RadialGradient {
      * @param sx
      * @param sy
      */
-    public void setEllipseDataRadLengths(radLengths rl, int sx, int sy) {
+    public void setEllipseDataRadLengths(radLengths rl, int sx, int sy)
+    {
         double rx = 0;
         double ry = 0;
         double distTop;
@@ -133,20 +142,28 @@ public class RadialGradient {
         double pom;
         int i;
 
-        switch (rl) {
+        switch (rl)
+        {
             // vypocet vzdalenosti k nejbl
             case CLOSEST_CORNER:
                 i = getIndexOfMinCornerDistance(sx, sy);
-                if (i == 0) { //A
+                if (i == 0)
+                { //A
                     xx = 0;
                     yy = 0;
-                } else if (i == 1) { //D
+                }
+                else if (i == 1)
+                { //D
                     xx = 0;
                     yy = rect.height;
-                } else if (i == 2) { // B
+                }
+                else if (i == 2)
+                { // B
                     xx = rect.width;
                     yy = rect.height;
-                } else { // C
+                }
+                else
+                { // C
                     xx = rect.width;
                     yy = 0;
                 }
@@ -159,16 +176,23 @@ public class RadialGradient {
 
             case FARTHEST_CORNER:
                 i = getIndexOfMaxCornerDistance(sx, sy);
-                if (i == 0) { //A
+                if (i == 0)
+                { //A
                     xx = 0;
                     yy = 0;
-                } else if (i == 1) { //D
+                }
+                else if (i == 1)
+                { //D
                     xx = 0;
                     yy = rect.height;
-                } else if (i == 2) { // B
+                }
+                else if (i == 2)
+                { // B
                     xx = rect.width;
                     yy = rect.height;
-                } else { // C
+                }
+                else
+                { // C
                     xx = rect.width;
                     yy = 0;
                 }
@@ -199,27 +223,32 @@ public class RadialGradient {
         setEllipseData(rx, ry, sx, sy);
     }
 
-    private int getIndexOfMinCornerDistance(int sx, int sy) {
+    private int getIndexOfMinCornerDistance(int sx, int sy)
+    {
         ArrayList<Double> l = getAllCornersDistance(sx, sy);
         return l.indexOf(Collections.min(l));
     }
 
-    private int getIndexOfMaxCornerDistance(int sx, int sy) {
+    private int getIndexOfMaxCornerDistance(int sx, int sy)
+    {
         ArrayList<Double> l = getAllCornersDistance(sx, sy);
         return l.indexOf(Collections.max(l));
 
     }
 
-/////////////
-/// vypocet pro kruznicovy tvar gradientu
-/////////////
+    /////////////
+    /// vypocet pro kruznicovy tvar gradientu
+    /////////////
     /**
-     * prepocet zadanych rozmeru a souradnic stredu gradientu na procentualni vyjadreni vzhledem k rozmerum elementu
+     * prepocet zadanych rozmeru a souradnic stredu gradientu na procentualni
+     * vyjadreni vzhledem k rozmerum elementu
+     * 
      * @param rxy
      * @param sx
-     * @param sy 
+     * @param sy
      */
-    public void setCircleData(double rxy, int sx, int sy) {
+    public void setCircleData(double rxy, int sx, int sy)
+    {
         isCircle = true;
 
         cx = (double) sx / (double) rect.width * 100;
@@ -232,26 +261,31 @@ public class RadialGradient {
     }
 
     /**
-     * stejne jako setCircleData, ale hodnoty stredu gradientu jsou zadany v procentech.
+     * stejne jako setCircleData, ale hodnoty stredu gradientu jsou zadany v
+     * procentech.
      * 
      * @param rxy
      * @param sxp
-     * @param syp 
+     * @param syp
      */
-    public void setCircleDataPercent(double rxy, int sxp, int syp) {
+    public void setCircleDataPercent(double rxy, int sxp, int syp)
+    {
         setCircleData(rxy, sxp * rect.width / 100, syp * rect.height / 100);
     }
 
     /**
      * vypocet pro pripad, ze je rozmer gradientu zadan jednim z klicovych slov
+     * 
      * @param rl
      * @param sx
-     * @param sy 
+     * @param sy
      */
-    public void setCircleDataRadLengths(radLengths rl, int sx, int sy) {
+    public void setCircleDataRadLengths(radLengths rl, int sx, int sy)
+    {
         double rxy = 0;
         ArrayList<Double> l;
-        switch (rl) {
+        switch (rl)
+        {
             case CLOSEST_CORNER:
                 l = getAllCornersDistance(sx, sy);
                 rxy = Collections.min(l);
@@ -273,11 +307,13 @@ public class RadialGradient {
         setCircleData(rxy, sx, sy);
     }
 
-    public void setCircleDataPercentRadLengths(radLengths rl, int sxp, int syp) {
+    public void setCircleDataPercentRadLengths(radLengths rl, int sxp, int syp)
+    {
         setCircleDataRadLengths(rl, sxp * rect.width / 100, syp * rect.height / 100);
     }
 
-    private ArrayList<Double> getAllCornersDistance(int centerX, int centerY) {
+    private ArrayList<Double> getAllCornersDistance(int centerX, int centerY)
+    {
         ArrayList<Double> l = new ArrayList<Double>();
 
         l.add(getPointsDistance(centerX, centerY, 0, 0)); // A
@@ -288,7 +324,8 @@ public class RadialGradient {
         return l;
     }
 
-    private ArrayList<Double> getAllSidesDistance(int centerX, int centerY) {
+    private ArrayList<Double> getAllSidesDistance(int centerX, int centerY)
+    {
         ArrayList<Double> l = new ArrayList<Double>();
 
         l.add(getCoordinateDistance(centerX, 0));
@@ -298,16 +335,16 @@ public class RadialGradient {
         return l;
     }
 
-    private double getPointsDistance(double x1, double y1, double x2, double y2) {
+    private double getPointsDistance(double x1, double y1, double x2, double y2)
+    {
         double dx = Math.abs(x1 - x2);
         double dy = Math.abs(y1 - y2);
         return Math.sqrt(dx * dx + dy * dy);
-
     }
 
-    private double getCoordinateDistance(double x1, double x2) {
+    private double getCoordinateDistance(double x1, double x2)
+    {
         return Math.abs(x1 - x2);
-
     }
 
 }

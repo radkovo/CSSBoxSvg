@@ -16,6 +16,7 @@
  * along with CSSBox. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 package org.fit.cssbox.svg.demo;
 
 import javax.swing.*;
@@ -63,20 +64,23 @@ import org.fit.cssbox.layout.Viewport;
 import org.fit.cssbox.svg.render.SVGDOMRenderer;
 
 /**
- * demo aplikace pouziva pro vykresleni svg kodu komponentu JSVGCanvas z balicku apache batik. 
- * Tato komponenta bohuzel neumi vykreslovat obrazky zadane pomoci kodovani base64, 
- * takze na vetsine webovych stranek skonci chybou renderovani obrazku
- * @author burgetr 
+ * demo aplikace pouziva pro vykresleni svg kodu komponentu JSVGCanvas z balicku
+ * apache batik. Tato komponenta bohuzel neumi vykreslovat obrazky zadane pomoci
+ * kodovani base64, takze na vetsine webovych stranek skonci chybou renderovani
+ * obrazku
+ * 
+ * @author burgetr
  * @author Martin Safar
  */
-public class BoxBrowser {
+public class BoxBrowser
+{
 
     protected DefaultMutableTreeNode root;
     protected DefaultMutableTreeNode domRoot;
     protected BrowserConfig config;
     public static BoxBrowser browser;
 
-    protected JFrame mainWindow = null;  //  @jve:decl-index=0:visual-constraint="67,17"
+    protected JFrame mainWindow = null; //  @jve:decl-index=0:visual-constraint="67,17"
     protected JPanel mainPanel = null;
     protected JPanel urlPanel = null;
     protected JPanel contentPanel = null;
@@ -106,29 +110,33 @@ public class BoxBrowser {
     private boolean loadImages = true;
     private boolean loadBackgroundImages = true;
 
-    public BoxBrowser() {
+    public BoxBrowser()
+    {
         this.config = new BrowserConfig();
         svgCanvas = new JSVGCanvas();
 
     }
 
-    public BrowserConfig getConfig() {
+    public BrowserConfig getConfig()
+    {
         return config;
     }
 
     /**
      * Reads the document, creates the layout and displays it
      *
-     * @param urlstring The URL of the document to display.
+     * @param urlstring
+     *            The URL of the document to display.
      * @return The final URL of the displayed document or <code>null</code> when
-     * the document couldn't be displayed.
+     *         the document couldn't be displayed.
      */
-    public URL displayURL(String urlstring) {
-        try {
-            if (!urlstring.startsWith("http:")
-                    && !urlstring.startsWith("https:")
-                    && !urlstring.startsWith("ftp:")
-                    && !urlstring.startsWith("file:")) {
+    public URL displayURL(String urlstring)
+    {
+        try
+        {
+            if (!urlstring.startsWith("http:") && !urlstring.startsWith("https:") && !urlstring.startsWith("ftp:")
+                    && !urlstring.startsWith("file:"))
+            {
                 urlstring = "http://" + urlstring;
             }
 
@@ -143,7 +151,8 @@ public class BoxBrowser {
             updateCurrentMedia(media);
 
             DOMAnalyzer da = new DOMAnalyzer(doc, docSource.getURL());
-            if (encoding == null) {
+            if (encoding == null)
+            {
                 encoding = da.getCharacterEncoding();
             }
             da.setDefaultEncoding(encoding);
@@ -175,7 +184,7 @@ public class BoxBrowser {
 
             contentScroll.setViewportView(svgCanvas);
             svgCanvas.setDocument(render.getDocument());
-//svgCanvas.setURI("file:///c:/work/outSVG.svg");
+            //svgCanvas.setURI("file:///c:/work/outSVG.svg");
 
             //         root = createBoxTree(viewport);
             //        boxTree.setModel(new DefaultTreeModel(root));
@@ -186,19 +195,21 @@ public class BoxBrowser {
             //=============================================================================
             return docSource.getURL();
 
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
             System.err.println("*** Error: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
     }
 
-    public URL displayURL2(String urlstring) {
-        try {
-            if (!urlstring.startsWith("http:")
-                    && !urlstring.startsWith("https:")
-                    && !urlstring.startsWith("ftp:")
-                    && !urlstring.startsWith("file:")) {
+    public URL displayURL2(String urlstring)
+    {
+        try
+        {
+            if (!urlstring.startsWith("http:") && !urlstring.startsWith("https:") && !urlstring.startsWith("ftp:")
+                    && !urlstring.startsWith("file:"))
+            {
                 urlstring = "http://" + urlstring;
             }
 
@@ -249,7 +260,8 @@ public class BoxBrowser {
             //=============================================================================
             return docSource.getURL();
 
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
             System.err.println("*** Error: " + e.getMessage());
             e.printStackTrace();
             return null;
@@ -260,7 +272,8 @@ public class BoxBrowser {
     /**
      * Sets some common fonts as the defaults for generic font families.
      */
-    protected void setDefaultFonts(BrowserConfig config) {
+    protected void setDefaultFonts(BrowserConfig config)
+    {
         config.setDefaultFont(Font.SERIF, "Times New Roman");
         config.setDefaultFont(Font.SANS_SERIF, "Arial");
         config.setDefaultFont(Font.MONOSPACED, "Courier New");
@@ -270,9 +283,11 @@ public class BoxBrowser {
      * Updates the given media specification according to the real screen
      * parametres (if they may be obtained).
      *
-     * @param media The media specification to be updated.
+     * @param media
+     *            The media specification to be updated.
      */
-    protected void updateCurrentMedia(MediaSpec media) {
+    protected void updateCurrentMedia(MediaSpec media)
+    {
         Dimension size = getContentScroll().getViewport().getSize();
         Dimension deviceSize = Toolkit.getDefaultToolkit().getScreenSize();
         ColorModel colors = Toolkit.getDefaultToolkit().getColorModel();
@@ -280,53 +295,64 @@ public class BoxBrowser {
         media.setDimensions(size.width, size.height);
         media.setDeviceDimensions(deviceSize.width, deviceSize.height);
         media.setColor(colors.getComponentSize()[0]);
-        if (colors instanceof IndexColorModel) {
+        if (colors instanceof IndexColorModel)
+        {
             media.setColorIndex(((IndexColorModel) colors).getMapSize());
         }
         media.setResolution(Toolkit.getDefaultToolkit().getScreenResolution());
     }
 
-//    /**
-//     * Recursively creates a tree from the box tree
-//     */
-//    protected DefaultMutableTreeNode createBoxTree(Box root) {
-//        DefaultMutableTreeNode ret = new DefaultMutableTreeNode(root);
-//        if (root instanceof ElementBox) {
-//            ElementBox el = (ElementBox) root;
-//            for (int i = el.getStartChild(); i < el.getEndChild(); i++) {
-//                ret.add(createBoxTree(el.getSubBox(i)));
-//            }
-//        }
-//        return ret;
-//    }
+    //    /**
+    //     * Recursively creates a tree from the box tree
+    //     */
+    //    protected DefaultMutableTreeNode createBoxTree(Box root) {
+    //        DefaultMutableTreeNode ret = new DefaultMutableTreeNode(root);
+    //        if (root instanceof ElementBox) {
+    //            ElementBox el = (ElementBox) root;
+    //            for (int i = el.getStartChild(); i < el.getEndChild(); i++) {
+    //                ret.add(createBoxTree(el.getSubBox(i)));
+    //            }
+    //        }
+    //        return ret;
+    //    }
     /**
      * Recursively creates a tree from the dom tree
      */
-    protected DefaultMutableTreeNode createDomTree(Node root) {
-        DefaultMutableTreeNode ret = new DefaultMutableTreeNode(root) {
+    protected DefaultMutableTreeNode createDomTree(Node root)
+    {
+        DefaultMutableTreeNode ret = new DefaultMutableTreeNode(root)
+        {
             private static final long serialVersionUID = 1L;
 
             @Override
-            public String toString() {
+            public String toString()
+            {
                 Object o = getUserObject();
-                if (o instanceof Element) {
+                if (o instanceof Element)
+                {
                     Element el = (Element) getUserObject();
                     String ret = "<" + el.getNodeName();
                     NamedNodeMap attrs = el.getAttributes();
-                    for (int i = 0; i < attrs.getLength(); i++) {
+                    for (int i = 0; i < attrs.getLength(); i++)
+                    {
                         ret += " " + attrs.item(i).getNodeName() + "=\"" + attrs.item(i).getNodeValue() + "\"";
                     }
                     ret += ">";
                     return ret;
-                } else if (o instanceof Text) {
+                }
+                else if (o instanceof Text)
+                {
                     return ((Text) o).getNodeValue();
-                } else {
+                }
+                else
+                {
                     return super.toString();
                 }
             }
         };
         NodeList child = root.getChildNodes();
-        for (int i = 0; i < child.getLength(); i++) {
+        for (int i = 0; i < child.getLength(); i++)
+        {
             ret.add(createDomTree(child.item(i)));
         }
         return ret;
@@ -335,25 +361,34 @@ public class BoxBrowser {
     /**
      * Locates a box from its position
      */
-    private DefaultMutableTreeNode locateBox(DefaultMutableTreeNode root, int x, int y) {
+    private DefaultMutableTreeNode locateBox(DefaultMutableTreeNode root, int x, int y)
+    {
         DefaultMutableTreeNode found = null;
         Box box = (Box) root.getUserObject();
         Rectangle bounds = box.getAbsoluteBounds();
-        if (bounds.contains(x, y)) {
+        if (bounds.contains(x, y))
+        {
             found = root;
         }
 
         //find if there is something smallest that fits among the child boxes
-        for (int i = 0; i < root.getChildCount(); i++) {
+        for (int i = 0; i < root.getChildCount(); i++)
+        {
             DefaultMutableTreeNode inside = locateBox((DefaultMutableTreeNode) root.getChildAt(i), x, y);
-            if (inside != null) {
-                if (found == null) {
+            if (inside != null)
+            {
+                if (found == null)
+                {
                     found = inside;
-                } else {
+                }
+                else
+                {
                     Box fbox = (Box) found.getUserObject();
                     Box ibox = (Box) inside.getUserObject();
-                    if (ibox.getAbsoluteBounds().width * ibox.getAbsoluteBounds().height
-                            < fbox.getAbsoluteBounds().width * fbox.getAbsoluteBounds().height) {
+                    if (ibox.getAbsoluteBounds().width
+                            * ibox.getAbsoluteBounds().height < fbox.getAbsoluteBounds().width
+                                    * fbox.getAbsoluteBounds().height)
+                    {
                         found = inside;
                     }
                 }
@@ -366,40 +401,49 @@ public class BoxBrowser {
     /**
      * Locates a DOM node in the DOM tree
      */
-    private DefaultMutableTreeNode locateObjectInTree(DefaultMutableTreeNode root, Object obj) {
-        if (root.getUserObject().equals(obj)) {
+    private DefaultMutableTreeNode locateObjectInTree(DefaultMutableTreeNode root, Object obj)
+    {
+        if (root.getUserObject().equals(obj))
+        {
             return root;
-        } else {
-            for (int i = 0; i < root.getChildCount(); i++) {
+        }
+        else
+        {
+            for (int i = 0; i < root.getChildCount(); i++)
+            {
                 DefaultMutableTreeNode ret = locateObjectInTree((DefaultMutableTreeNode) root.getChildAt(i), obj);
-                if (ret != null) {
-                    return ret;
-                }
+                if (ret != null)
+                { return ret; }
             }
             return null;
         }
     }
 
-    class StyleListItem {
+    class StyleListItem
+    {
 
         private String text;
         private String tooltip;
 
-        public StyleListItem(String text, String tooltip) {
+        public StyleListItem(String text, String tooltip)
+        {
             this.text = text;
             this.tooltip = tooltip;
         }
 
-        public String getToolTipText() {
+        public String getToolTipText()
+        {
             return tooltip;
         }
 
-        public String toString() {
+        public String toString()
+        {
             return text;
         }
     }
 
-    public BrowserCanvas getBrowserCanvas() {
+    public BrowserCanvas getBrowserCanvas()
+    {
         return (BrowserCanvas) contentCanvas;
     }
 
@@ -409,15 +453,19 @@ public class BoxBrowser {
      *
      * @return javax.swing.JFrame
      */
-    public JFrame getMainWindow() {
-        if (mainWindow == null) {
+    public JFrame getMainWindow()
+    {
+        if (mainWindow == null)
+        {
             mainWindow = new JFrame();
             mainWindow.setTitle("Box Browser");
             mainWindow.setVisible(true);
             mainWindow.setBounds(new Rectangle(0, 0, 583, 251));
             mainWindow.setContentPane(getMainPanel());
-            mainWindow.addWindowListener(new java.awt.event.WindowAdapter() {
-                public void windowClosing(java.awt.event.WindowEvent e) {
+            mainWindow.addWindowListener(new java.awt.event.WindowAdapter()
+            {
+                public void windowClosing(java.awt.event.WindowEvent e)
+                {
                     mainWindow.setVisible(false);
                     System.exit(0);
                 }
@@ -431,8 +479,10 @@ public class BoxBrowser {
      *
      * @return javax.swing.JPanel
      */
-    private JPanel getMainPanel() {
-        if (mainPanel == null) {
+    private JPanel getMainPanel()
+    {
+        if (mainPanel == null)
+        {
             GridBagConstraints gridBagConstraints2 = new GridBagConstraints();
             gridBagConstraints2.gridy = -1;
             gridBagConstraints2.anchor = GridBagConstraints.WEST;
@@ -469,8 +519,10 @@ public class BoxBrowser {
      *
      * @return javax.swing.JPanel
      */
-    private JPanel getUrlPanel() {
-        if (urlPanel == null) {
+    private JPanel getUrlPanel()
+    {
+        if (urlPanel == null)
+        {
             GridBagConstraints gridBagConstraints1 = new GridBagConstraints();
             gridBagConstraints1.fill = java.awt.GridBagConstraints.HORIZONTAL;
             gridBagConstraints1.gridy = 0;
@@ -506,8 +558,10 @@ public class BoxBrowser {
      *
      * @return javax.swing.JPanel
      */
-    private JPanel getContentPanel() {
-        if (contentPanel == null) {
+    private JPanel getContentPanel()
+    {
+        if (contentPanel == null)
+        {
             GridLayout gridLayout1 = new GridLayout();
             gridLayout1.setRows(1);
             contentPanel = new JPanel();
@@ -522,8 +576,10 @@ public class BoxBrowser {
      *
      * @return javax.swing.JPanel
      */
-    private JPanel getStatusPanel() {
-        if (statusPanel == null) {
+    private JPanel getStatusPanel()
+    {
+        if (statusPanel == null)
+        {
             GridBagConstraints gridBagConstraints4 = new GridBagConstraints();
             gridBagConstraints4.gridx = 0;
             gridBagConstraints4.fill = java.awt.GridBagConstraints.HORIZONTAL;
@@ -542,8 +598,10 @@ public class BoxBrowser {
      *
      * @return javax.swing.JTextField
      */
-    private JTextField getStatusText() {
-        if (statusText == null) {
+    private JTextField getStatusText()
+    {
+        if (statusText == null)
+        {
             statusText = new JTextField();
             statusText.setEditable(false);
             statusText.setText("Browser ready.");
@@ -556,11 +614,15 @@ public class BoxBrowser {
      *
      * @return javax.swing.JTextField
      */
-    private JTextField getUrlText() {
-        if (urlText == null) {
+    private JTextField getUrlText()
+    {
+        if (urlText == null)
+        {
             urlText = new JTextField();
-            urlText.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent e) {
+            urlText.addActionListener(new java.awt.event.ActionListener()
+            {
+                public void actionPerformed(java.awt.event.ActionEvent e)
+                {
                     displayURL(urlText.getText());
                 }
             });
@@ -573,12 +635,16 @@ public class BoxBrowser {
      *
      * @return javax.swing.JButton
      */
-    private JButton getOkButton() {
-        if (okButton == null) {
+    private JButton getOkButton()
+    {
+        if (okButton == null)
+        {
             okButton = new JButton();
             okButton.setText("Go!");
-            okButton.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent e) {
+            okButton.addActionListener(new java.awt.event.ActionListener()
+            {
+                public void actionPerformed(java.awt.event.ActionEvent e)
+                {
                     displayURL(urlText.getText());
                 }
             });
@@ -591,14 +657,20 @@ public class BoxBrowser {
      *
      * @return javax.swing.JScrollPane
      */
-    private JScrollPane getContentScroll() {
-        if (contentScroll == null) {
+    private JScrollPane getContentScroll()
+    {
+        if (contentScroll == null)
+        {
             contentScroll = new JScrollPane();
             contentScroll.setViewportView(getContentCanvas());
-            contentScroll.addComponentListener(new java.awt.event.ComponentAdapter() {
-                public void componentResized(java.awt.event.ComponentEvent e) {
-                    if (contentCanvas != null && contentCanvas instanceof BrowserCanvas) {
-                        ((BrowserCanvas) contentCanvas).createLayout(contentScroll.getSize(), contentScroll.getViewport().getViewRect());
+            contentScroll.addComponentListener(new java.awt.event.ComponentAdapter()
+            {
+                public void componentResized(java.awt.event.ComponentEvent e)
+                {
+                    if (contentCanvas != null && contentCanvas instanceof BrowserCanvas)
+                    {
+                        ((BrowserCanvas) contentCanvas).createLayout(contentScroll.getSize(),
+                                contentScroll.getViewport().getViewRect());
                         contentScroll.repaint();
                         //new box tree
                         //   root = createBoxTree(((BrowserCanvas) contentCanvas).getViewport());
@@ -614,8 +686,10 @@ public class BoxBrowser {
      *
      * @return javax.swing.JPanel
      */
-    private JPanel getContentCanvas() {
-        if (contentCanvas == null) {
+    private JPanel getContentCanvas()
+    {
+        if (contentCanvas == null)
+        {
             contentCanvas = new JPanel();
         }
         return contentCanvas;
@@ -626,8 +700,10 @@ public class BoxBrowser {
      *
      * @return javax.swing.JToolBar
      */
-    private JToolBar getShowToolBar() {
-        if (showToolBar == null) {
+    private JToolBar getShowToolBar()
+    {
+        if (showToolBar == null)
+        {
             showToolBar = new JToolBar();
             showToolBar.add(getRedrawButton());
         }
@@ -639,13 +715,17 @@ public class BoxBrowser {
      *
      * @return javax.swing.JButton
      */
-    private JButton getRedrawButton() {
-        if (redrawButton == null) {
+    private JButton getRedrawButton()
+    {
+        if (redrawButton == null)
+        {
             redrawButton = new JButton();
             redrawButton.setText("Clear");
             redrawButton.setMnemonic(KeyEvent.VK_UNDEFINED);
-            redrawButton.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent e) {
+            redrawButton.addActionListener(new java.awt.event.ActionListener()
+            {
+                public void actionPerformed(java.awt.event.ActionEvent e)
+                {
                     ((BrowserCanvas) contentCanvas).redrawBoxes();
                     contentCanvas.repaint();
                 }
@@ -659,8 +739,10 @@ public class BoxBrowser {
      *
      * @return javax.swing.JPanel
      */
-    private JPanel getJPanel3() {
-        if (toolPanel == null) {
+    private JPanel getJPanel3()
+    {
+        if (toolPanel == null)
+        {
             FlowLayout flowLayout = new FlowLayout();
             flowLayout.setAlignment(java.awt.FlowLayout.LEFT);
             toolPanel = new JPanel();
@@ -673,7 +755,8 @@ public class BoxBrowser {
     /**
      * @param args
      */
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         browser = new BoxBrowser();
         JFrame main = browser.getMainWindow();
         main.setSize(1200, 600);

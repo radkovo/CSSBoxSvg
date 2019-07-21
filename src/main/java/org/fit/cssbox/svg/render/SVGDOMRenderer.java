@@ -1,3 +1,4 @@
+
 package org.fit.cssbox.svg.render;
 
 import java.awt.Color;
@@ -57,8 +58,8 @@ import org.fit.cssbox.layout.TextBox;
  *
  * @author Martin Safar
  */
-public class SVGDOMRenderer implements BoxRenderer {
-
+public class SVGDOMRenderer implements BoxRenderer
+{
     private PrintWriter out;
 
     private int rootw;
@@ -79,21 +80,14 @@ public class SVGDOMRenderer implements BoxRenderer {
 
     private Element backgroundStore;
 
-    public Element getCurrentElem() {
-        return elemStack.peek();
-    }
-
-    public Document getDocument() {
-        return doc;
-    }
-
     /**
      *
      * @param rootWidth
      * @param rootHeight
      * @param out
      */
-    public SVGDOMRenderer(int rootWidth, int rootHeight, Writer out) {
+    public SVGDOMRenderer(int rootWidth, int rootHeight, Writer out)
+    {
         elemStack = new Stack<Element>();
         impl = SVGDOMImplementation.getDOMImplementation();
         svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
@@ -113,7 +107,8 @@ public class SVGDOMRenderer implements BoxRenderer {
      * @param rootWidth
      * @param rootHeight
      */
-    public SVGDOMRenderer(int rootWidth, int rootHeight) {
+    public SVGDOMRenderer(int rootWidth, int rootHeight)
+    {
         elemStack = new Stack<Element>();
         impl = SVGDOMImplementation.getDOMImplementation();
         svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
@@ -129,7 +124,20 @@ public class SVGDOMRenderer implements BoxRenderer {
 
     //====================================================================================================
 
-    private void writeHeader() {
+    public Element getCurrentElem()
+    {
+        return elemStack.peek();
+    }
+
+    public Document getDocument()
+    {
+        return doc;
+    }
+
+    //====================================================================================================
+    
+    private void writeHeader()
+    {
         svgRoot = doc.getDocumentElement();
         elemStack.push(svgRoot);
 
@@ -140,14 +148,15 @@ public class SVGDOMRenderer implements BoxRenderer {
         svgRoot.setAttributeNS(null, "xmlns", "http://www.w3.org/2000/svg");
         svgRoot.setAttributeNS(null, "xlink", "http://www.w3.org/1999/xlink");
         svgRoot.setAttributeNS("xmlns", "space", "preserve");
-
     }
 
-    private void writeFooter() {
-        if (streamResult) {
-            try {
-                TransformerFactory tFactory
-                        = TransformerFactory.newInstance();
+    private void writeFooter()
+    {
+        if (streamResult)
+        {
+            try
+            {
+                TransformerFactory tFactory = TransformerFactory.newInstance();
                 Transformer transformer;
                 transformer = tFactory.newTransformer();
 
@@ -157,25 +166,29 @@ public class SVGDOMRenderer implements BoxRenderer {
                 StreamResult result = new StreamResult(out);
 
                 transformer.transform(source, result);
-            } catch (TransformerConfigurationException ex) {
+            } catch (TransformerConfigurationException ex)
+            {
                 Logger.getLogger(SVGDOMRenderer.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (TransformerException ex) {
+            } catch (TransformerException ex)
+            {
                 Logger.getLogger(SVGDOMRenderer.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
 
-    public void startElementContents(ElementBox elem) {
+    public void startElementContents(ElementBox elem)
+    {
 
-        boolean useGroup = false; 
+        boolean useGroup = false;
         final Element g = createElement("g");
-//        if (backgroundStore != null) {
-//            g.appendChild(backgroundStore);
-//            //elemStack.pop();
-//            backgroundStore = null;
-//            
-//        }
-        if (elem instanceof BlockBox && ((BlockBox) elem).getOverflowX() != BlockBox.OVERFLOW_VISIBLE) {
+        //        if (backgroundStore != null) {
+        //            g.appendChild(backgroundStore);
+        //            //elemStack.pop();
+        //            backgroundStore = null;
+        //            
+        //        }
+        if (elem instanceof BlockBox && ((BlockBox) elem).getOverflowX() != BlockBox.OVERFLOW_VISIBLE)
+        {
             Rectangle cb = elem.getClippedContentBounds();
             String clip = "cssbox-clip-" + idcounter;
             Element clipPath = createElement("clipPath");
@@ -190,30 +203,34 @@ public class SVGDOMRenderer implements BoxRenderer {
 
         Transform t = new Transform();
         String tm = t.createTransform(elem);
-        if (!tm.equals("")) {
+        if (!tm.equals(""))
+        {
             g.setAttributeNS(null, "transform", tm);
             useGroup = true;
         }
 
         String opacity = elem.getStylePropertyValue("opacity");
-        if (opacity != "") {
+        if (opacity != "")
+        {
             g.setAttributeNS(null, "opacity", opacity);
             useGroup = true;
         }
-        
+
         if (useGroup)
             elemStack.push(g);
     }
 
-    public void finishElementContents(ElementBox elem) {
-        if (elemStack.peek() != svgRoot) {
+    public void finishElementContents(ElementBox elem)
+    {
+        if (elemStack.peek() != svgRoot)
+        {
             Element buf = elemStack.pop();
             getCurrentElem().appendChild(buf);
         }
     }
 
-    public void renderElementBackground(ElementBox eb) {
-
+    public void renderElementBackground(ElementBox eb)
+    {
         backgroundStore = createElement("g");
 
         backgroundStore.setAttributeNS(null, "id", "bgstore" + (idcounter++));
@@ -224,28 +241,39 @@ public class SVGDOMRenderer implements BoxRenderer {
 
         String background = eb.getStylePropertyValue("background-color");
         Rectangle bb = eb.getAbsoluteBorderBounds();
-        if (eb instanceof Viewport) {
+        if (eb instanceof Viewport)
+        {
             bb = eb.getClippedBounds();
         }
         Color bg = eb.getBgcolor();
-        if (background.equals("#112233")) { // simulace linearniho gradientu
+        if (background.equals("#112233"))
+        { // simulace linearniho gradientu
             simulateLinearGradient(eb, 35);
-        } else if (background.equals("#332233")) { // simulace radialniho gradientu
+        }
+        else if (background.equals("#332233"))
+        { // simulace radialniho gradientu
             simulateRadialGradient(eb);
-        } else if (bg != null) { // pozadi urcene barvou
+        }
+        else if (bg != null)
+        { // pozadi urcene barvou
             String style = "stroke:none;fill-opacity:1;fill:" + colorString(bg);
             wrap.appendChild(createRect(bb.x, bb.y, bb.width, bb.height, style));
         }
 
         // pozadi urcene obrazkem
-        if (eb.getBackgroundImages() != null && eb.getBackgroundImages().size() > 0) {
-            for (BackgroundImage bimg : eb.getBackgroundImages()) {
+        if (eb.getBackgroundImages() != null && eb.getBackgroundImages().size() > 0)
+        {
+            for (BackgroundImage bimg : eb.getBackgroundImages())
+            {
                 BufferedImage img = bimg.getBufferedImage();
-                if (img != null) {
+                if (img != null)
+                {
                     ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    try {
+                    try
+                    {
                         ImageIO.write(img, "png", os);
-                    } catch (IOException e) {
+                    } catch (IOException e)
+                    {
                         //out.println("<!-- I/O error: " + e.getMessage() + " -->");
                     }
                     char[] data = Base64Coder.encode(os.toByteArray());
@@ -287,13 +315,15 @@ public class SVGDOMRenderer implements BoxRenderer {
         // pokud je na element aplikovana transformace, vygeneruje se prislusny transformacni paremtr
         Transform t = new Transform();
         String tm = t.createTransform(eb);
-        if (!tm.equals("")) {
+        if (!tm.equals(""))
+        {
             backgroundStore.setAttributeNS(null, "transform", tm);
         }
 
         // pokud je na element aplikovana pruhlednost, vygeneruje se prislusny parametr do elementu
         String opacity = eb.getStylePropertyValue("opacity");
-        if (opacity != "") {
+        if (opacity != "")
+        {
             backgroundStore.setAttributeNS(null, "opacity", opacity);
         }
 
@@ -303,21 +333,19 @@ public class SVGDOMRenderer implements BoxRenderer {
     @Override
     public void renderMarker(ListItemBox elem)
     {
-    	 if (elem.getMarkerImage() != null)
-         {
-             if (!writeMarkerImage(elem))
-                 writeBullet(elem);
-         }
-         else
-             writeBullet(elem);
+        if (elem.getMarkerImage() != null)
+        {
+            if (!writeMarkerImage(elem)) writeBullet(elem);
+        }
+        else
+            writeBullet(elem);
     }
 
     private boolean writeMarkerImage(ListItemBox lb)
     {
         VisualContext ctx = lb.getVisualContext();
         int ofs = lb.getFirstInlineBoxBaseline();
-        if (ofs == -1)
-            ofs = ctx.getBaselineOffset(); //use the font baseline
+        if (ofs == -1) ofs = ctx.getBaselineOffset(); //use the font baseline
         int x = (int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm());
         int y = lb.getAbsoluteContentY() + ofs;
         BufferedImage img = lb.getMarkerImage().getBufferedImage();
@@ -327,7 +355,8 @@ public class SVGDOMRenderer implements BoxRenderer {
             try
             {
                 ImageIO.write(img, "png", os);
-            } catch (IOException e) {
+            } catch (IOException e)
+            {
                 out.println("<!-- I/O error: " + e.getMessage() + " -->");
             }
             char[] data = Base64Coder.encode(os.toByteArray());
@@ -349,7 +378,7 @@ public class SVGDOMRenderer implements BoxRenderer {
         else
             return false;
     }
-    
+
     private void writeBullet(ListItemBox lb)
     {
         if (lb.hasVisibleBullet())
@@ -358,14 +387,15 @@ public class SVGDOMRenderer implements BoxRenderer {
             int x = (int) Math.round(lb.getAbsoluteContentX() - 1.2 * ctx.getEm());
             int y = (int) Math.round(lb.getAbsoluteContentY() + 0.5 * ctx.getEm());
             int r = (int) Math.round(0.4 * ctx.getEm());
-            
+
             String tclr = colorString(ctx.getColor());
             String style = "";
-            
+
             switch (lb.getListStyleType())
             {
                 case "circle":
-                    style = "fill:none;fill-opacity:1;stroke:" + tclr + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
+                    style = "fill:none;fill-opacity:1;stroke:" + tclr
+                            + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
                     //out.println("<circle style=\"" + style + "\" cx=\"" + (x + r / 2) + "\" cy=\"" + (y + r / 2) + "\" r=\"" + (r / 2) + "\" />");
                     Element circle = createElement("circle");
                     circle.setAttributeNS(null, "cx", Integer.toString(x + r / 2));
@@ -375,7 +405,8 @@ public class SVGDOMRenderer implements BoxRenderer {
                     getCurrentElem().appendChild(circle);
                     break;
                 case "square":
-                    style = "fill:" + tclr +";fill-opacity:1;stroke:" + tclr + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
+                    style = "fill:" + tclr + ";fill-opacity:1;stroke:" + tclr
+                            + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
                     //out.println("<rect style=\"" + style + "\" x=\"" + x + "\" y=\"" + y + "\" width=\"" + r + "\" height=\"" + r + "\" />");
                     Element rect = createElement("rect");
                     rect.setAttributeNS(null, "x", Integer.toString(x));
@@ -386,7 +417,8 @@ public class SVGDOMRenderer implements BoxRenderer {
                     getCurrentElem().appendChild(rect);
                     break;
                 case "disc":
-                    style = "fill:" + tclr +";fill-opacity:1;stroke:" + tclr + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
+                    style = "fill:" + tclr + ";fill-opacity:1;stroke:" + tclr
+                            + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
                     //out.println("<circle style=\"" + style + "\" cx=\"" + (x + r / 2) + "\" cy=\"" + (y + r / 2) + "\" r=\"" + (r / 2) + "\" />");
                     Element disc = createElement("circle");
                     disc.setAttributeNS(null, "cx", Integer.toString(x + r / 2));
@@ -397,31 +429,28 @@ public class SVGDOMRenderer implements BoxRenderer {
                     break;
                 default:
                     int baseline = lb.getFirstInlineBoxBaseline();
-                    if (baseline == -1)
-                        baseline = ctx.getBaselineOffset(); //use the font baseline
+                    if (baseline == -1) baseline = ctx.getBaselineOffset(); //use the font baseline
                     style = textStyle(ctx) + ";text-align:end;text-anchor:end";
-                    addText(getCurrentElem(), (int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm()), lb.getAbsoluteContentY() + baseline, style, lb.getMarkerText());
+                    addText(getCurrentElem(), (int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm()),
+                            lb.getAbsoluteContentY() + baseline, style, lb.getMarkerText());
                     break;
             }
         }
     }
-    
+
     private String textStyle(VisualContext ctx)
     {
-        String style = "font-size:" + ctx.getFontSize() + "pt;" + 
-                       "font-weight:" + (ctx.getFont().isBold()?"bold":"normal") + ";" + 
-                       "font-style:" + (ctx.getFont().isItalic()?"italic":"normal") + ";" +
-                       "font-family:" + ctx.getFont().getFamily() + ";" +
-                       "fill:" + colorString(ctx.getColor()) + ";" +
-                       "stroke:none";
-        if (!ctx.getTextDecoration().isEmpty())
-            style += ";text-decoration:" + ctx.getTextDecorationString();
-        if (ctx.getLetterSpacing() > 0.0001)
-            style += ";letter-spacing:" + ctx.getLetterSpacing() + "px";
+        String style = "font-size:" + ctx.getFontSize() + "pt;" + "font-weight:"
+                + (ctx.getFont().isBold() ? "bold" : "normal") + ";" + "font-style:"
+                + (ctx.getFont().isItalic() ? "italic" : "normal") + ";" + "font-family:" + ctx.getFont().getFamily()
+                + ";" + "fill:" + colorString(ctx.getColor()) + ";" + "stroke:none";
+        if (!ctx.getTextDecoration().isEmpty()) style += ";text-decoration:" + ctx.getTextDecorationString();
+        if (ctx.getLetterSpacing() > 0.0001) style += ";letter-spacing:" + ctx.getLetterSpacing() + "px";
         return style;
     }
-    
-    public void renderTextContent(TextBox text) {
+
+    public void renderTextContent(TextBox text)
+    {
         Rectangle b = text.getAbsoluteBounds();
         String style = textStyle(text.getVisualContext());
         if (text.getWordSpacing() == null && text.getExtraWidth() == 0)
@@ -440,7 +469,7 @@ public class SVGDOMRenderer implements BoxRenderer {
         txt.setTextContent(text);
         parent.appendChild(txt);
     }
-    
+
     private void addText(Element parent, int x, int y, int width, int height, String style, String text)
     {
         //out.print("<text x=\"" + x + "\" y=\"" + y + "\" width=\"" + width + "\" height=\"" + height + "\" style=\"" + style + "\">" + htmlEntities(text) + "</text>");
@@ -453,7 +482,7 @@ public class SVGDOMRenderer implements BoxRenderer {
         txt.setTextContent(text);
         parent.appendChild(txt);
     }
-    
+
     private void addTextByWords(Element parent, int x, int y, int width, int height, String style, TextBox text)
     {
         final String[] words = text.getText().split(" ");
@@ -469,17 +498,22 @@ public class SVGDOMRenderer implements BoxRenderer {
             addText(parent, x, y, width, height, style, text.getText());
     }
 
-    
-    public void renderReplacedContent(ReplacedBox box) {
+    public void renderReplacedContent(ReplacedBox box)
+    {
         ReplacedContent cont = box.getContentObj();
-        if (cont != null) {
-            if (cont instanceof ReplacedImage) {
+        if (cont != null)
+        {
+            if (cont instanceof ReplacedImage)
+            {
                 BufferedImage img = ((ReplacedImage) cont).getBufferedImage();
-                if (img != null) {
+                if (img != null)
+                {
                     ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    try {
+                    try
+                    {
                         ImageIO.write(img, "png", os);
-                    } catch (IOException e) {
+                    } catch (IOException e)
+                    {
                         out.println("<!-- I/O error: " + e.getMessage() + " -->");
                     }
                     char[] data = Base64Coder.encode(os.toByteArray());
@@ -494,7 +528,9 @@ public class SVGDOMRenderer implements BoxRenderer {
                     image.setAttributeNS(null, "xlink:href", imgdata);
                     getCurrentElem().appendChild(image);
                 }
-            } else if (cont instanceof ReplacedText) {//HTML objekty
+            }
+            else if (cont instanceof ReplacedText)
+            {//HTML objekty
                 Rectangle cb = ((Box) box).getClippedBounds();
                 String clip = "cssbox-clip-" + idcounter;
 
@@ -512,15 +548,18 @@ public class SVGDOMRenderer implements BoxRenderer {
         }
     }
 
-    public void close() {
+    public void close()
+    {
         writeFooter();
     }
 
-    private String colorString(TermColor color) {
+    private String colorString(TermColor color)
+    {
         return colorString(CSSUnits.convertColor(color.getValue()));
     }
 
-    private String colorString(Color color) {
+    private String colorString(Color color)
+    {
         return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
     }
 
@@ -529,7 +568,8 @@ public class SVGDOMRenderer implements BoxRenderer {
      * @param border
      * @return
      */
-    private Element getClipPathElementForBorder(Border border) {
+    private Element getClipPathElementForBorder(Border border)
+    {
         Element q;
         CornerRadius crTopLeft = border.getRadius(2);
         CornerRadius crTopRight = border.getRadius(1);
@@ -541,11 +581,13 @@ public class SVGDOMRenderer implements BoxRenderer {
 
         path += " L " + crTopRight.b.x + " " + (crTopRight.b.y) + " ";
 
-        if (crTopRight.isDrawn) {
-            path += " A " + (crTopRight.x - border.border.right) + " "
-                    + (crTopRight.y - border.border.top) + " 0 0 1 "
+        if (crTopRight.isDrawn)
+        {
+            path += " A " + (crTopRight.x - border.border.right) + " " + (crTopRight.y - border.border.top) + " 0 0 1 "
                     + Math.round(crTopRight.d.x) + " " + Math.round(crTopRight.d.y);
-        } else {
+        }
+        else
+        {
             path += " L " + crTopRight.g.x + " " + crTopRight.g.y;
             path += " L " + crTopRight.d.x + " " + crTopRight.d.y;
 
@@ -553,30 +595,36 @@ public class SVGDOMRenderer implements BoxRenderer {
 
         path += " L " + crBottomRight.b.x + " " + (crBottomRight.b.y) + " ";
 
-        if (crBottomRight.isDrawn) {
-            path += " A " + (crBottomRight.x - border.border.right) + " "
-                    + (crBottomRight.y - border.border.bottom) + " 0 0 1 "
-                    + Math.round(crBottomRight.d.x) + " " + Math.round(crBottomRight.d.y);
-        } else {
+        if (crBottomRight.isDrawn)
+        {
+            path += " A " + (crBottomRight.x - border.border.right) + " " + (crBottomRight.y - border.border.bottom)
+                    + " 0 0 1 " + Math.round(crBottomRight.d.x) + " " + Math.round(crBottomRight.d.y);
+        }
+        else
+        {
             path += " L " + crBottomRight.g.x + " " + crBottomRight.g.y;
             path += " L " + crBottomRight.d.x + " " + crBottomRight.d.y;
         }
         path += " L " + crBottomLeft.b.x + " " + (crBottomLeft.b.y) + " ";
-        if (crBottomLeft.isDrawn) {
-            path += " A " + (crBottomLeft.x - border.border.left) + " "
-                    + (crBottomLeft.y - border.border.bottom) + " 0 0 1 "
-                    + Math.round(crBottomLeft.d.x) + " " + Math.round(crBottomLeft.d.y);
-        } else {
+        if (crBottomLeft.isDrawn)
+        {
+            path += " A " + (crBottomLeft.x - border.border.left) + " " + (crBottomLeft.y - border.border.bottom)
+                    + " 0 0 1 " + Math.round(crBottomLeft.d.x) + " " + Math.round(crBottomLeft.d.y);
+        }
+        else
+        {
             path += " L " + crBottomLeft.g.x + " " + crBottomLeft.g.y;
             path += " L " + crBottomLeft.d.x + " " + crBottomLeft.d.y;
         }
 
         path += " L " + crTopLeft.b.x + " " + (crTopLeft.b.y) + " ";
-        if (crTopLeft.isDrawn) {
-            path += " A " + (crTopLeft.x - border.border.left) + " "
-                    + (crTopLeft.y - border.border.top) + " 0 0 1 "
+        if (crTopLeft.isDrawn)
+        {
+            path += " A " + (crTopLeft.x - border.border.left) + " " + (crTopLeft.y - border.border.top) + " 0 0 1 "
                     + Math.round(crTopLeft.d.x) + " " + Math.round(crTopLeft.d.y);
-        } else {
+        }
+        else
+        {
             path += " L " + crTopLeft.g.x + " " + crTopLeft.g.y;
             path += " L " + crTopLeft.d.x + " " + crTopLeft.d.y;
         }
@@ -589,7 +637,8 @@ public class SVGDOMRenderer implements BoxRenderer {
      * @param eb
      * @param b
      */
-    private void writeBorders(ElementBox eb, Border b) {
+    private void writeBorders(ElementBox eb, Border b)
+    {
         LengthSet borders = b.border;
 
         // vygenerovani rovnych casti ramecku
@@ -610,7 +659,8 @@ public class SVGDOMRenderer implements BoxRenderer {
      * @param border
      * @param s
      */
-    private void writeBorderCorner(Border border, int s) {
+    private void writeBorderCorner(Border border, int s)
+    {
         int rady, radx;
         CornerRadius cr = border.getRadius(s);
         radx = cr.x;
@@ -622,24 +672,31 @@ public class SVGDOMRenderer implements BoxRenderer {
         int widthHor, widthVer;
 
         // podle toho, ktery roh je vykreslovan ziskame sirky ramecku a barvy v prislusnych smerech 
-        if (s == 1) { // top-right
+        if (s == 1)
+        { // top-right
             widthHor = border.border.right;
             widthVer = border.border.top;
 
             ccc1 = border.colorRight;
             ccc2 = border.colorTop;
-        } else if (s == 2) { // topleft
+        }
+        else if (s == 2)
+        { // topleft
             widthHor = border.border.left;
             widthVer = border.border.top;
             ccc1 = border.colorTop;
             ccc2 = border.colorLeft;
-        } else if (s == 3) { // bottomright
+        }
+        else if (s == 3)
+        { // bottomright
             widthHor = border.border.right;
             widthVer = border.border.bottom;
 
             ccc1 = border.colorBottom;
             ccc2 = border.colorRight;
-        } else { // bottomleft
+        }
+        else
+        { // bottomleft
             widthHor = border.border.left;
             widthVer = border.border.bottom;
 
@@ -648,14 +705,20 @@ public class SVGDOMRenderer implements BoxRenderer {
         }
         String cString1;
         String cString2;
-        if (ccc1 != null) {
+        if (ccc1 != null)
+        {
             cString1 = colorString(ccc1);
-        } else {
+        }
+        else
+        {
             cString1 = "none";
         }
-        if (ccc2 != null) {
+        if (ccc2 != null)
+        {
             cString2 = colorString(ccc2);
-        } else {
+        }
+        else
+        {
             cString2 = "none";
         }
 
@@ -666,7 +729,8 @@ public class SVGDOMRenderer implements BoxRenderer {
         path1 = cr.getPathRadiusC(widthVer, widthHor);
         path2 = cr.getPathRadiusA(widthVer, widthHor);
 
-        if (widthVer > rady || widthHor > radx) {
+        if (widthVer > rady || widthHor > radx)
+        {
             cr.isDrawn = false;
         }
 
@@ -687,41 +751,46 @@ public class SVGDOMRenderer implements BoxRenderer {
      * @param side
      * @param width
      */
-    private void writeBorderSVG(ElementBox eb, Point a, Point b, String side, int width) {
-
+    private void writeBorderSVG(ElementBox eb, Point a, Point b, String side, int width)
+    {
         TermColor tclr = eb.getStyle().getValue(TermColor.class, "border-" + side + "-color");
         CSSProperty.BorderStyle bst = eb.getStyle().getProperty("border-" + side + "-style");
-        if (bst != CSSProperty.BorderStyle.HIDDEN && (tclr == null || !tclr.isTransparent())) {
+        if (bst != CSSProperty.BorderStyle.HIDDEN && (tclr == null || !tclr.isTransparent()))
+        {
             Color clr = null;
-            if (tclr != null) {
+            if (tclr != null)
+            {
                 clr = CSSUnits.convertColor(tclr.getValue());
             }
-            if (clr == null) {
+            if (clr == null)
+            {
                 clr = eb.getVisualContext().getColor();
-                if (clr == null) {
+                if (clr == null)
+                {
                     clr = Color.BLACK;
                 }
             }
             String coords = "";
-            switch (side) {
+            switch (side)
+            {
                 case "left":
-                    coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y
-                            + " L " + (b.x + width) + "," + b.y + " L " + (a.x + width) + "," + a.y;
+                    coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y + " L " + (b.x + width) + "," + b.y
+                            + " L " + (a.x + width) + "," + a.y;
 
                     break;
                 case "top":
-                    coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y
-                            + " L " + (b.x) + "," + (b.y + width) + " L " + a.x + "," + (a.y + width);
+                    coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y + " L " + (b.x) + "," + (b.y + width)
+                            + " L " + a.x + "," + (a.y + width);
 
                     break;
                 case "right":
-                    coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y
-                            + " L " + (b.x - width) + "," + b.y + " L " + (a.x - width) + "," + a.y;
+                    coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y + " L " + (b.x - width) + "," + b.y
+                            + " L " + (a.x - width) + "," + a.y;
 
                     break;
                 case "bottom":
-                    coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y
-                            + " L " + (b.x) + "," + (b.y - width) + " L " + a.x + "," + (a.y - width);
+                    coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y + " L " + (b.x) + "," + (b.y - width)
+                            + " L " + a.x + "," + (a.y - width);
 
                     break;
             }
@@ -735,7 +804,8 @@ public class SVGDOMRenderer implements BoxRenderer {
      *
      * @param eb
      */
-    private void simulateRadialGradient(ElementBox eb) {
+    private void simulateRadialGradient(ElementBox eb)
+    {
         Rectangle bb = eb.getAbsoluteBorderBounds();
         // rozmery elementu, pro ktery gradient vykreslujeme
         int ix = bb.x + eb.getBorder().left;
@@ -752,7 +822,7 @@ public class SVGDOMRenderer implements BoxRenderer {
         grad.isCircle = true;
 
         // nastaveni hodnot simulovaneho gradientu podle CSS
-//        grad.setCircleData(100, 20, 20);
+        //        grad.setCircleData(100, 20, 20);
         //grad.setCircleDataPercentRadLengths(RadialGradient.radLengths.FARTHEST_SIDE, 40, 40);
         // grad.setEllipseDataPercent(70, 20, 40, 40);
         grad.setEllipseDataRadLengths(RadialGradient.radLengths.FARTHEST_CORNER, 40, 80);
@@ -770,11 +840,13 @@ public class SVGDOMRenderer implements BoxRenderer {
         image.setAttributeNS(null, "fx", "" + Double.toString(grad.fx) + "%");
         image.setAttributeNS(null, "fy", "" + Double.toString(grad.fy) + "%");
         image.setAttributeNS(null, "id", url);
-        for (int i = 0; i < grad.data.size(); i++) {
+        for (int i = 0; i < grad.data.size(); i++)
+        {
             Element stop = createElement("stop");
             Color cc = grad.data.get(i).c;
             stop.setAttributeNS(null, "offset", "" + grad.data.get(i).i + "%");
-            stop.setAttributeNS(null, "style", "stop-color:rgb(" + cc.getRed() + "," + cc.getGreen() + "," + cc.getBlue() + ");stop-opacity:1");
+            stop.setAttributeNS(null, "style",
+                    "stop-color:rgb(" + cc.getRed() + "," + cc.getGreen() + "," + cc.getBlue() + ");stop-opacity:1");
             image.appendChild(stop);
         }
 
@@ -790,14 +862,17 @@ public class SVGDOMRenderer implements BoxRenderer {
 
         // vygenerovani elementu, na ktery bude gradient aplikovan
         // navic je zde vytvoren i orezovy element clippath, ktery orizne element s gradientem na velikost puvodniho elementu
-        if (grad.isCircle) {
+        if (grad.isCircle)
+        {
             int max = Math.max(iw, ih);
             double x = (max == iw ? ix : ix - ((max - iw) * grad.cx / 100));
             double y = (max == ih ? iy : iy - ((max - ih) * grad.cy / 100));
             Element e = createRect(x, y, max, max, style);
             e.setAttributeNS(null, "clip-path", "url(#" + clip + ")");
             getCurrentElem().appendChild(e);
-        } else {
+        }
+        else
+        {
             //   int max = Math.max(iw, ih);
             double x = (grad.newWidth == iw ? ix : ix - ((grad.newWidth - iw) * grad.cx / 100));
             double y = (grad.newHeight == ih ? iy : iy - ((grad.newHeight - ih) * grad.cy / 100));
@@ -807,7 +882,6 @@ public class SVGDOMRenderer implements BoxRenderer {
             getCurrentElem().appendChild(e);
             //getCurrentElem().appendChild(createRect(ix, y, iw, grad.newHeight, style));
         }
-
     }
 
     /**
@@ -816,7 +890,8 @@ public class SVGDOMRenderer implements BoxRenderer {
      * @param eb
      * @param angle
      */
-    private void simulateLinearGradient(ElementBox eb, int angle) {
+    private void simulateLinearGradient(ElementBox eb, int angle)
+    {
         Rectangle bb = eb.getAbsoluteBorderBounds();
         // ziskani rozmeru elementu 
         int ix = bb.x + eb.getBorder().left;
@@ -844,24 +919,27 @@ public class SVGDOMRenderer implements BoxRenderer {
         image.setAttributeNS(null, "x2", "" + Double.toString(grad.x2) + "%");
         image.setAttributeNS(null, "y2", "" + Double.toString(grad.y2) + "%");
         image.setAttributeNS(null, "id", url);
-        for (int i = 0; i < grad.data.size(); i++) {
+        for (int i = 0; i < grad.data.size(); i++)
+        {
             Element stop = createElement("stop");
             Color cc = grad.data.get(i).c;
             stop.setAttributeNS(null, "offset", "" + grad.data.get(i).i + "%");
-            stop.setAttributeNS(null, "style", "stop-color:rgb(" + cc.getRed() + "," + cc.getGreen() + "," + cc.getBlue() + ");stop-opacity:1");
+            stop.setAttributeNS(null, "style",
+                    "stop-color:rgb(" + cc.getRed() + "," + cc.getGreen() + "," + cc.getBlue() + ");stop-opacity:1");
             image.appendChild(stop);
         }
 
         defs.appendChild(image);
         getCurrentElem().appendChild(defs);
-        
+
         String style = "stroke:none;fill-opacity:1;fill:url(#" + url + ");";
 
         // vyggenerovani SVG elementu s gradientem jako pozadi
         getCurrentElem().appendChild(createRect(ix, iy, iw, ih, style));
     }
 
-    public Element createPath(String dPath, String fill, String stroke, int strokeWidth) {
+    public Element createPath(String dPath, String fill, String stroke, int strokeWidth)
+    {
         Element e = createElement("path");
         e.setAttributeNS(null, "d", dPath);
         e.setAttributeNS(null, "stroke", stroke);
@@ -870,7 +948,8 @@ public class SVGDOMRenderer implements BoxRenderer {
         return e;
     }
 
-    public Element createRect(double x, double y, double width, double height, String style) {
+    public Element createRect(double x, double y, double width, double height, String style)
+    {
         Element e = createElement("rect");
         e.setAttributeNS(null, "x", Double.toString(x));
         e.setAttributeNS(null, "y", Double.toString(y));
@@ -880,7 +959,8 @@ public class SVGDOMRenderer implements BoxRenderer {
         return e;
     }
 
-    public Element createRect(int x, int y, int width, int height, String style) {
+    public Element createRect(int x, int y, int width, int height, String style)
+    {
         Element e = createElement("rect");
         e.setAttributeNS(null, "x", Integer.toString(x));
         e.setAttributeNS(null, "y", Integer.toString(y));
@@ -890,7 +970,8 @@ public class SVGDOMRenderer implements BoxRenderer {
         return e;
     }
 
-    public Element createImage(int x, int y, int width, int height, String imgData) {
+    public Element createImage(int x, int y, int width, int height, String imgData)
+    {
         Element image = createElement("image");
         //text.setAttributeNS(null, "id", );
         image.setAttributeNS(null, "x", Integer.toString(x));
@@ -901,7 +982,8 @@ public class SVGDOMRenderer implements BoxRenderer {
         return image;
     }
 
-    public Element createElement(String elementName) {
+    public Element createElement(String elementName)
+    {
         Element e = doc.createElementNS(svgNS, elementName);
         return e;
     }

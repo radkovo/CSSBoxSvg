@@ -3,6 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package org.fit.cssbox.svg.layout;
 
 import cz.vutbr.web.css.TermColor;
@@ -18,7 +19,8 @@ import org.fit.cssbox.layout.LengthSet;
  *
  * @author safar
  */
-public class Border {
+public class Border
+{
 
     // sirky jednotlivych stran ramecku
     public LengthSet border;
@@ -56,7 +58,8 @@ public class Border {
      * @param bb
      * @param eb
      */
-    public Border(LengthSet lengths, Rectangle bb, ElementBox eb) {
+    public Border(LengthSet lengths, Rectangle bb, ElementBox eb)
+    {
         border = lengths;
         borderBounds = bb;
         topRightH = new Point();
@@ -90,13 +93,15 @@ public class Border {
     }
 
     /**
-     * trida podle identifikatoru vraci prislusny roh ramecku 
+     * trida podle identifikatoru vraci prislusny roh ramecku
      *
      * @param s
      * @return
      */
-    public CornerRadius getRadius(int s) {
-        switch (s) {
+    public CornerRadius getRadius(int s)
+    {
+        switch (s)
+        {
             default:
             case 1:
                 return topRight;
@@ -116,34 +121,43 @@ public class Border {
      * @param s
      * @param radiusStyle
      */
-    private void setRadiusByStyle(int s, String radiusStyle) {
+    private void setRadiusByStyle(int s, String radiusStyle)
+    {
         String[] parts = radiusStyle.trim().split(" ");
         int radx, rady;
         //System.out.println(radiusStyle);
-        if (parts.length > 2) {
+        if (parts.length > 2)
+        {
             String part1 = parts[0].replaceAll("[\\D]", "");
             String part2 = parts[2].replaceAll("[\\D]", "");
 
             radx = Integer.parseInt(part1);
             rady = Integer.parseInt(part2);
-        } else if (parts.length > 1) {
+        }
+        else if (parts.length > 1)
+        {
             String part1 = parts[0].replaceAll("[\\D]", "");
             String part2 = parts[1].replaceAll("[\\D]", "");
 
             radx = Integer.parseInt(part1);
             rady = Integer.parseInt(part2);
-        } else {
+        }
+        else
+        {
             radx = 0;
             rady = 0;
         }
-        if (radx > borderBounds.width / 2) {
+        if (radx > borderBounds.width / 2)
+        {
             radx = borderBounds.width / 2;
         }
-        if (rady > borderBounds.height / 2) {
+        if (rady > borderBounds.height / 2)
+        {
             rady = borderBounds.height / 2;
         }
         CornerRadius cr = new CornerRadius(radx, rady, s);
-        switch (s) {
+        switch (s)
+        {
             default:
             case 1:
                 topRight = cr;
@@ -158,14 +172,15 @@ public class Border {
                 bottomLeft = cr;
                 break;
         }
-
     }
 
     /**
-     * metoda por dopocitani hranicnich bodu
-     * hranicni body se dopocitavaji podle rozmeru elementu, velikosti zaobleni rohu a sirky jednotlivych stran ramecku
+     * metoda por dopocitani hranicnich bodu hranicni body se dopocitavaji podle
+     * rozmeru elementu, velikosti zaobleni rohu a sirky jednotlivych stran
+     * ramecku
      */
-    public void calculateBorderPoints() {
+    public void calculateBorderPoints()
+    {
 
         topLeftH.x = borderBounds.x + max(topLeft.x, border.left);//topLeft.x;
         topLeftH.y = borderBounds.y;
@@ -190,16 +205,16 @@ public class Border {
 
         topLeftV.x = borderBounds.x;
         topLeftV.y = borderBounds.y + max(topLeft.y, border.top);
-
     }
 
     /**
-     *  vypocet bodu A, B, C, atd pro kazdy roh zvlast 
+     * vypocet bodu A, B, C, atd pro kazdy roh zvlast
      */
-    public void calculateRadiusPoints() {
+    public void calculateRadiusPoints()
+    {
         int widthHor, widthVer;
         int radx, rady;
-        
+
         ////////////////////////////////
         // TOP RIGHT
         ////////////////////////////////
@@ -236,7 +251,8 @@ public class Border {
         // x = -z/k;
 
         topRight.bounds = new Rectangle(topRight.o.x - radx, topRight.o.y, radx, rady);
-        if (widthVer > rady || widthHor > radx) {
+        if (widthVer > rady || widthHor > radx)
+        {
             topRight.q = new Point();
             topRight.q.x = topRight.d.x;
             topRight.q.y = topRight.b.y;
@@ -245,11 +261,10 @@ public class Border {
         // ziskame pruseciky (body G a H, viz technicka zprava k diplomove praci), ktere jsou pouzity pro vykresleni jednotlivych casti
         calculateMiddlePoints(topRight, radx, rady, widthHor, widthVer, 1);
 
-        
         ////////////////////////////////
         // TOP LEFT
         ////////////////////////////////
-        
+
         // topleft
         radx = topLeft.x;
         rady = topLeft.y;
@@ -277,18 +292,18 @@ public class Border {
         topLeft.z = (topLeft.o.y + topLeft.k * topLeft.o.x);
 
         topLeft.bounds = new Rectangle(topLeft.o.x, topLeft.o.y, radx, rady);
-        if (widthVer > rady || widthHor > radx) {
+        if (widthVer > rady || widthHor > radx)
+        {
             topLeft.q = new Point();
             topLeft.q.x = topLeft.b.x;
             topLeft.q.y = topLeft.d.y;
         }
         calculateMiddlePoints(topLeft, radx, rady, widthHor, widthVer, 2);
 
-        
         ////////////////////////////////
         // BOTTOM RIGHT
         ////////////////////////////////
-        
+
         radx = bottomRight.x;
         rady = bottomRight.y;
         widthHor = border.right;
@@ -317,18 +332,18 @@ public class Border {
         bottomRight.z = (bottomRight.o.y + bottomRight.k * bottomRight.o.x);
 
         bottomRight.bounds = new Rectangle(bottomRight.o.x - radx, bottomRight.o.y - rady, radx, rady);
-        if (widthVer > rady || widthHor > radx) {
+        if (widthVer > rady || widthHor > radx)
+        {
             bottomRight.q = new Point();
             bottomRight.q.x = bottomRight.b.x;
             bottomRight.q.y = bottomRight.d.y;
         }
         calculateMiddlePoints(bottomRight, radx, rady, widthHor, widthVer, 3);
 
-        
         ////////////////////////////////
         // BOTTOM LEFT
         ////////////////////////////////
-        
+
         radx = bottomLeft.x;
         rady = bottomLeft.y;
         widthHor = border.left;
@@ -356,7 +371,8 @@ public class Border {
         bottomLeft.z = (bottomLeft.o.y + bottomLeft.k * bottomLeft.o.x);
 
         bottomLeft.bounds = new Rectangle(bottomLeft.o.x, bottomLeft.o.y - rady, radx, rady);
-        if (widthVer > rady || widthHor > radx) {
+        if (widthVer > rady || widthHor > radx)
+        {
             bottomLeft.q = new Point();
             bottomLeft.q.x = bottomLeft.d.x;
             bottomLeft.q.y = bottomLeft.b.y;
@@ -365,8 +381,8 @@ public class Border {
     }
 
     /**
-     * metoda pro dopocitani bodu G a H
-     * zde jsou osetreny specialni pripady
+     * metoda pro dopocitani bodu G a H zde jsou osetreny specialni pripady
+     * 
      * @param cr
      * @param radx
      * @param rady
@@ -374,75 +390,97 @@ public class Border {
      * @param widthVer
      * @param s
      */
-    public void calculateMiddlePoints(CornerRadius cr, int radx, int rady, int widthHor, int widthVer, int s) {
-        
+    public void calculateMiddlePoints(CornerRadius cr, int radx, int rady, int widthHor, int widthVer, int s)
+    {
         // pokud je ramecek nastaven na 0px
         // ramecek je vykreslen bez zaobleni a body G a H jsou dopocitavany pouze podle sirky ramecku
-        if (radx == 0 && rady == 0) {
+        if (radx == 0 && rady == 0)
+        {
             cr.h.x = cr.o.x;
             cr.h.y = cr.o.y;
-            if (s == 1) { // top-right
+            if (s == 1)
+            { // top-right
                 cr.g.x = cr.o.x - widthHor;
                 cr.g.y = cr.o.y + widthVer;
-            } else if (s == 2) { // top-left
+            }
+            else if (s == 2)
+            { // top-left
                 cr.g.x = cr.o.x + widthHor;
                 cr.g.y = cr.o.y + widthVer;
-            } else if (s == 3) { // bottom-right
+            }
+            else if (s == 3)
+            { // bottom-right
                 cr.g.x = cr.o.x - widthHor;
                 cr.g.y = cr.o.y - widthVer;
-            } else { // bottom-left
+            }
+            else
+            { // bottom-left
                 cr.g.x = cr.o.x + widthHor;
                 cr.g.y = cr.o.y - widthVer;
             }
             cr.isDrawn = false; // zaobleni se nevykresluje
-        } else if (widthHor == 0) { // pokud je nulova sirka v horizontalnim smeru a ve vertikalnim je nenulova 
-            if (s == 1 || s == 4) { // ramecek prechazi postupne do jednoho bodu (viz DP)
-                cr.h.x = cr.c.x;
-                cr.h.y = cr.c.y;
-                cr.g.x = cr.c.x;
-                cr.g.y = cr.c.y;
-            } else {
-                cr.h.x = cr.a.x;
-                cr.h.y = cr.a.y;
-                cr.g.x = cr.a.x;
-                cr.g.y = cr.a.y;
-            }
-        } else if (widthVer == 0) {// pokud je nulova sirka ve vertikalnim smeru a v horizontalnim je nenulova 
-            if (s == 1 || s == 4) {
-                cr.h.x = cr.a.x;
-                cr.h.y = cr.a.y;
-                cr.g.x = cr.a.x;
-                cr.g.y = cr.a.y;
-            } else {
+        }
+        else if (widthHor == 0)
+        { // pokud je nulova sirka v horizontalnim smeru a ve vertikalnim je nenulova 
+            if (s == 1 || s == 4)
+            { // ramecek prechazi postupne do jednoho bodu (viz DP)
                 cr.h.x = cr.c.x;
                 cr.h.y = cr.c.y;
                 cr.g.x = cr.c.x;
                 cr.g.y = cr.c.y;
             }
-        } else {
+            else
+            {
+                cr.h.x = cr.a.x;
+                cr.h.y = cr.a.y;
+                cr.g.x = cr.a.x;
+                cr.g.y = cr.a.y;
+            }
+        }
+        else if (widthVer == 0)
+        {// pokud je nulova sirka ve vertikalnim smeru a v horizontalnim je nenulova 
+            if (s == 1 || s == 4)
+            {
+                cr.h.x = cr.a.x;
+                cr.h.y = cr.a.y;
+                cr.g.x = cr.a.x;
+                cr.g.y = cr.a.y;
+            }
+            else
+            {
+                cr.h.x = cr.c.x;
+                cr.h.y = cr.c.y;
+                cr.g.x = cr.c.x;
+                cr.g.y = cr.c.y;
+            }
+        }
+        else
+        {
             // pokud nenastal zadny ze specialnich pripadu, spocitame prusecik obou elips s primkou 
             cr.h = getIntersectPoint(cr.e, radx, rady, -cr.k, cr.z, cr.bounds);
             cr.g = getIntersectPoint(cr.e, radx - widthHor, rady - widthVer, -cr.k, cr.z, cr.bounds);
         }
 
-        if (cr.q != null) {
+        if (cr.q != null)
+        {
             cr.g.x = cr.q.x;
             cr.g.y = cr.q.y;
         }
     }
 
-    
     /**
      * prusecik elipsy s primkou
+     * 
      * @param x0
      * @param y0
      * @param a
      * @param b
      * @param k
      * @param c
-     * @return 
+     * @return
      */
-    private ArrayList<Double> ellipseLineIntersect(int x0, int y0, int a, int b, double k, double c) {
+    private ArrayList<Double> ellipseLineIntersect(int x0, int y0, int a, int b, double k, double c)
+    {
         double delta = c + k * x0;
         double eps = c - y0;
         double div = a * a * k * k + b * b;
@@ -466,7 +504,9 @@ public class Border {
     }
 
     /**
-     * metoda pro vypocet pruseciku primky a elipsy, ktera vybere ten prusecik, ktery je ve vymezenem obdelniku
+     * metoda pro vypocet pruseciku primky a elipsy, ktera vybere ten prusecik,
+     * ktery je ve vymezenem obdelniku
+     * 
      * @param center
      * @param sizex
      * @param sizey
@@ -475,27 +515,33 @@ public class Border {
      * @param bounds
      * @return
      */
-    public DPoint getIntersectPoint(Point center, int sizex, int sizey, double slope, double yIntercept, Rectangle bounds) {
+    public DPoint getIntersectPoint(Point center, int sizex, int sizey, double slope, double yIntercept,
+            Rectangle bounds)
+    {
         ArrayList<Double> arl = ellipseLineIntersect(center.x, center.y, sizex, sizey, slope, yIntercept);
         DPoint p = new DPoint();
         p.x = arl.get(0);
         p.y = arl.get(1);
-        if (!isInBounds(bounds, p)) {
+        if (!isInBounds(bounds, p))
+        {
             p.x = arl.get(2);
             p.y = arl.get(3);
         }
         return p;
     }
 
-    public boolean isInBounds(Rectangle r, DPoint p) {
+    public boolean isInBounds(Rectangle r, DPoint p)
+    {
         return isInBounds(r.x, r.y, r.x + r.width, r.y + r.height, p.x, p.y);
     }
 
-    public boolean isInBounds(int x1, int y1, int x2, int y2, int px, int py) {
+    public boolean isInBounds(int x1, int y1, int x2, int y2, int px, int py)
+    {
         return px > x1 && px < x2 && py < y2 && py > y1;
     }
 
-    public boolean isInBounds(int x1, int y1, int x2, int y2, double px, double py) {
+    public boolean isInBounds(int x1, int y1, int x2, int y2, double px, double py)
+    {
         return px > x1 && px < x2 && py < y2 && py > y1;
     }
 
