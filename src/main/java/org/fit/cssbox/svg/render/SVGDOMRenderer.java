@@ -193,17 +193,11 @@ public class SVGDOMRenderer implements BoxRenderer
 
         boolean useGroup = false;
         final Element g = createElement("g");
-        //        if (backgroundStore != null) {
-        //            g.appendChild(backgroundStore);
-        //            //elemStack.pop();
-        //            backgroundStore = null;
-        //            
-        //        }
         if (elem instanceof BlockBox && ((BlockBox) elem).getOverflowX() != BlockBox.OVERFLOW_VISIBLE)
         {
-            Rectangle cb = elem.getClippedContentBounds();
-            String clip = "cssbox-clip-" + idcounter;
-            Element clipPath = createElement("clipPath");
+            final Rectangle cb = elem.getClippedContentBounds();
+            final String clip = "cssbox-clip-" + idcounter;
+            final Element clipPath = createElement("clipPath");
             clipPath.setAttribute("id", clip);
             clipPath.appendChild(createRect(cb.x, cb.y, cb.width, cb.height, ""));
             getCurrentElem().appendChild(clipPath);
@@ -301,21 +295,21 @@ public class SVGDOMRenderer implements BoxRenderer
         }
 
         // vygenerovani obaloveho elementu pro ramecek
-        Element gBorder = createElement("g");
+        final Element gBorder = createElement("g");
         gBorder.setAttribute("id", "borders-" + (idcounter++));
         // obalovy element se nastavi jako hlavni
         elemStack.push(gBorder);
         // nasledne je vygenerovan ramecek pro cely element
-        Border border = new Border(eb.getBorder(), bb, eb);
+        final Border border = new Border(eb.getBorder(), bb, eb);
         writeBorders(eb, border);
 
         elemStack.pop();
         //border
-        String clip = "cssbox-clip-" + idcounter;
+        final String clip = "cssbox-clip-" + (idcounter++);
         // podle vnejsi hranice ramecku je vygenerovan orezovy element
-        Element clipPath = createElement("clipPath");
+        final Element clipPath = createElement("clipPath");
         clipPath.setAttribute("id", clip);
-        Element q = getClipPathElementForBorder(border);
+        final Element q = getClipPathElementForBorder(border);
         clipPath.appendChild(q);
         wrap.setAttribute("clip-path", "url(#" + clip + ")");
 
@@ -545,19 +539,18 @@ public class SVGDOMRenderer implements BoxRenderer
             }
             else if (cont instanceof ReplacedText)
             {//HTML objekty
-                Rectangle cb = ((Box) box).getClippedBounds();
-                String clip = "cssbox-clip-" + idcounter;
+                final Rectangle cb = ((Box) box).getClippedBounds();
+                final String clip = "cssbox-clip-" + idcounter;
 
-                Element clipPath = doc.createElementNS(svgNS, "clipPath");
+                final Element clipPath = doc.createElementNS(svgNS, "clipPath");
                 clipPath.setAttribute("id", clip);
                 clipPath.appendChild(createRect(cb.x, cb.y, cb.width, cb.height, ""));
                 getCurrentElem().appendChild(clipPath);
 
-                Element g = doc.createElementNS(svgNS, "g");
+                final Element g = doc.createElementNS(svgNS, "g");
                 g.setAttribute("id", "cssbox-obj-" + (idcounter++));
                 g.setAttribute("clip-path", "url(#" + clip + ")");
                 getCurrentElem().appendChild(g);
-
             }
         }
     }
@@ -841,10 +834,9 @@ public class SVGDOMRenderer implements BoxRenderer
         // grad.setEllipseDataPercent(70, 20, 40, 40);
         grad.setEllipseDataRadLengths(RadialGradient.radLengths.FARTHEST_CORNER, 40, 80);
 
-        String url = "cssbox-gradient-" + idcounter;
-        idcounter++;
-        Element defs = createElement("defs");
-        Element image;
+        final String url = "cssbox-gradient-" + (idcounter++);
+        final Element defs = createElement("defs");
+        final Element image;
         image = createElement("radialGradient");
 
         // vygenerovani SVG elementu pro gradient, vcetne jednotlivych gradientovych zastavek
@@ -998,8 +990,7 @@ public class SVGDOMRenderer implements BoxRenderer
 
     public Element createElement(String elementName)
     {
-        Element e = doc.createElementNS(svgNS, elementName);
-        return e;
+        return doc.createElementNS(svgNS, elementName);
     }
 
 }
