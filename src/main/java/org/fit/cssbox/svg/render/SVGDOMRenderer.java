@@ -140,9 +140,7 @@ public class SVGDOMRenderer implements BoxRenderer
         try
         {
             DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder;
-            builder = builderFactory.newDocumentBuilder();
-            //DocumentType doctype = builder.getDOMImplementation().createDocumentType("html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+            DocumentBuilder builder = builderFactory.newDocumentBuilder();
             doc = builder.getDOMImplementation().createDocument(svgNS, "svg", null);
             return doc;
         } catch (ParserConfigurationException e) {
@@ -159,7 +157,6 @@ public class SVGDOMRenderer implements BoxRenderer
         svgRoot.setAttribute("width", Integer.toString(rootw) + "px");
         svgRoot.setAttribute("height", Integer.toString(rooth) + "px");
         svgRoot.setAttribute("viewBox", "0 0 " + rootw + " " + rooth);
-        svgRoot.setAttribute("zoomAndPan", "disable");
         svgRoot.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:xlink", xlinkNS);
         
         svgRoot.appendChild(doc.createComment(" Rendered by CSSBox http://cssbox.sourceforge.net "));
@@ -372,7 +369,7 @@ public class SVGDOMRenderer implements BoxRenderer
                 ImageIO.write(img, "png", os);
             } catch (IOException e)
             {
-                out.println("<!-- I/O error: " + e.getMessage() + " -->");
+                e.printStackTrace();
             }
             char[] data = Base64Coder.encode(os.toByteArray());
             String imgdata = "data:image/png;base64," + new String(data);
@@ -531,7 +528,7 @@ public class SVGDOMRenderer implements BoxRenderer
                         ImageIO.write(img, "png", os);
                     } catch (IOException e)
                     {
-                        out.println("<!-- I/O error: " + e.getMessage() + " -->");
+                        e.printStackTrace();
                     }
                     char[] data = Base64Coder.encode(os.toByteArray());
                     String imgdata = "data:image/png;base64," + new String(data);
