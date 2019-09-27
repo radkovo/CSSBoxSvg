@@ -1,25 +1,32 @@
 
 package org.fit.cssbox.svg.layout;
 
-import java.util.ArrayList;
-
 /**
  * Trida pro reprezentaci linearniho gradientu
  *
  * @author Martin Safar
+ * @author burgetr
  */
-public class LinearGradient
+public class LinearGradient extends Gradient
 {
-    public ArrayList<GradientStop> data;
-
-    // uhel ve stupnich
-    public Integer angle;
-
     public double x1;
     public double y1;
     public double x2;
     public double y2;
 
+    public LinearGradient()
+    {
+        super();
+    }
+    
+    public double getGradientLength()
+    {
+        final double dx = Math.abs(x2 - x1);
+        final double dy = Math.abs(y2 - y1);
+        final double a = Math.max(dx, dy);
+        return a * Math.sqrt(2);
+    }
+    
     /**
      * tato metoda slouzi k nastaveni smeru gradientu, tak jak je nastaven v CSS
      * podle rozmeru elementu, pro ktery je gradient vykreslovan vypocte
@@ -33,7 +40,6 @@ public class LinearGradient
      */
     public void setAngleDeg(double deg, int w, int h)
     {
-
         double procDeg = (deg % 360 + 360) % 360;
         double normDeg = 90 - procDeg;
         double tan;
@@ -165,4 +171,5 @@ public class LinearGradient
             }
         }
     }
+    
 }

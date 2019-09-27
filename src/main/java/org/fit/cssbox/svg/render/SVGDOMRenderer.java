@@ -13,8 +13,11 @@ import javax.imageio.ImageIO;
 
 import cz.vutbr.web.css.CSSProperty;
 import cz.vutbr.web.css.TermColor;
+import cz.vutbr.web.css.TermFunction;
+import cz.vutbr.web.css.TermIdent;
+import cz.vutbr.web.css.TermLengthOrPercent;
+
 import java.awt.Point;
-import java.util.ArrayList;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,6 +37,7 @@ import org.fit.cssbox.css.CSSUnits;
 import org.fit.cssbox.layout.BackgroundImage;
 import org.fit.cssbox.layout.BlockBox;
 import org.fit.cssbox.layout.Box;
+import org.fit.cssbox.layout.CSSDecoder;
 import org.fit.cssbox.layout.LengthSet;
 import org.fit.cssbox.layout.ListItemBox;
 import org.fit.cssbox.layout.ReplacedContent;
@@ -245,22 +249,27 @@ public class SVGDOMRenderer implements BoxRenderer
         Element wrap;
         wrap = createElement("g");
 
-        String background = eb.getStylePropertyValue("background-color");
+        final CSSProperty.BackgroundImage bgImageSpec = eb.getStyle().getProperty("background-image");
+        if (bgImageSpec == CSSProperty.BackgroundImage.gradient)
+        {
+            TermFunction.Gradient gradFunction = eb.getStyle().getValue(TermFunction.Gradient.class, "background-image");
+            if (gradFunction instanceof TermFunction.LinearGradient)
+            {
+                addLinearGradient(eb, (TermFunction.LinearGradient) gradFunction);
+            }
+            else if (gradFunction instanceof TermFunction.RadialGradient)
+            {
+                addRadialGradient(eb, (TermFunction.RadialGradient) gradFunction);
+            }
+        }
+        
         Rectangle bb = eb.getAbsoluteBorderBounds();
         if (eb instanceof Viewport)
         {
             bb = eb.getClippedBounds();
         }
         Color bg = eb.getBgcolor();
-        if (background.equals("#112233"))
-        { // simulace linearniho gradientu
-            simulateLinearGradient(eb, 35);
-        }
-        else if (background.equals("#332233"))
-        { // simulace radialniho gradientu
-            simulateRadialGradient(eb);
-        }
-        else if (bg != null)
+        if (bg != null)
         { // pozadi urcene barvou
             String style = "stroke:none;fill-opacity:1;fill:" + colorString(bg);
             wrap.appendChild(createRect(bb.x, bb.y, bb.width, bb.height, style));
@@ -807,50 +816,76 @@ public class SVGDOMRenderer implements BoxRenderer
         }
     }
 
-    /**
-     *
-     * @param eb
-     */
-    private void simulateRadialGradient(ElementBox eb)
+    private void addRadialGradient(ElementBox eb, TermFunction.RadialGradient spec)
     {
+        CSSDecoder dec = new CSSDecoder(eb.getVisualContext());
+        
         Rectangle bb = eb.getAbsoluteBorderBounds();
-        // rozmery elementu, pro ktery gradient vykreslujeme
+        // element sizes
         int ix = bb.x + eb.getBorder().left;
         int iy = bb.y + eb.getBorder().top;
         int iw = bb.width - eb.getBorder().right - eb.getBorder().left;
         int ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
 
+        // stops
         RadialGradient grad = new RadialGradient(eb.getClippedContentBounds());
-        grad.data = new ArrayList<GradientStop>();
-        grad.data.add(new GradientStop(Color.decode("#A9CDC3"), 0));
-        grad.data.add(new GradientStop(Color.decode("#665178"), 20));
-        grad.data.add(new GradientStop(Color.decode("#ff0000"), 80));
-        grad.data.add(new GradientStop(Color.decode("#A9CDC3"), 100));
-        grad.isCircle = true;
+        for (TermFunction.Gradient.ColorStop stop : spec.getColorStops())
+        {
+            Color color = CSSUnits.convertColor(stop.getColor().getValue());
+            Float percentage = decodePercentage(eb, stop.getLength(), dec, iw); //TODO iw?
+            grad.addStop(new GradientStop(color, percentage));
+        }
+        grad.recomputeStops();
 
-        // nastaveni hodnot simulovaneho gradientu podle CSS
-        //        grad.setCircleData(100, 20, 20);
-        //grad.setCircleDataPercentRadLengths(RadialGradient.radLengths.FARTHEST_SIDE, 40, 40);
-        // grad.setEllipseDataPercent(70, 20, 40, 40);
-        grad.setEllipseDataRadLengths(RadialGradient.radLengths.FARTHEST_CORNER, 40, 80);
-
+        // position
+        int px = dec.getLength(spec.getPosition()[0], false, 0, 0, iw);
+        int py = dec.getLength(spec.getPosition()[1], false, 0, 0, ih);
+        
+        if ("circle".equals(spec.getShape().getValue()))
+        {
+            RadialGradient.RadLengths ident = decodeSizeIdent(spec.getSizeIdent());
+            if (ident != null)
+            {
+                grad.setCircleDataRadLengths(ident, px, py);
+            }
+            else
+            {
+                double r = dec.getLength(spec.getSize()[0], false, 0, 0, iw);
+                grad.setCircleData(r, px, py);
+            }
+        }
+        else //ellipse
+        {
+            RadialGradient.RadLengths ident = decodeSizeIdent(spec.getSizeIdent());
+            if (ident != null)
+            {
+                grad.setEllipseDataRadLengths(ident, px, py);
+            }
+            else
+            {
+                double rx = dec.getLength(spec.getSize()[0], false, 0, 0, iw);
+                double ry = dec.getLength(spec.getSize()[1], false, 0, 0, ih);
+                grad.setEllipseData(rx, ry, px, py);
+            }
+        }
+        
         final String url = "cssbox-gradient-" + (idcounter++);
         final Element defs = createElement("defs");
         final Element image;
         image = createElement("radialGradient");
 
-        // vygenerovani SVG elementu pro gradient, vcetne jednotlivych gradientovych zastavek
-        image.setAttribute("r", "" + Double.toString(grad.r) + "%");
-        image.setAttribute("cx", "" + Double.toString(grad.cx) + "%");
-        image.setAttribute("cy", "" + Double.toString(grad.cy) + "%");
-        image.setAttribute("fx", "" + Double.toString(grad.fx) + "%");
-        image.setAttribute("fy", "" + Double.toString(grad.fy) + "%");
+        // geterate the SVG element for gradient
+        image.setAttribute("r", String.valueOf(grad.r) + "%");
+        image.setAttribute("cx", String.valueOf(grad.cx) + "%");
+        image.setAttribute("cy", String.valueOf(grad.cy) + "%");
+        image.setAttribute("fx", String.valueOf(grad.fx) + "%");
+        image.setAttribute("fy", String.valueOf(grad.fy) + "%");
         image.setAttribute("id", url);
-        for (int i = 0; i < grad.data.size(); i++)
+        for (int i = 0; i < grad.getStops().size(); i++)
         {
             Element stop = createElement("stop");
-            Color cc = grad.data.get(i).c;
-            stop.setAttribute("offset", "" + grad.data.get(i).i + "%");
+            Color cc = grad.getStops().get(i).getColor();
+            stop.setAttribute("offset", "" + grad.getStops().get(i).getPercentage() + "%");
             stop.setAttribute("style",
                     "stop-color:rgb(" + cc.getRed() + "," + cc.getGreen() + "," + cc.getBlue() + ");stop-opacity:1");
             image.appendChild(stop);
@@ -866,9 +901,9 @@ public class SVGDOMRenderer implements BoxRenderer
         clipPath.appendChild(createRect(ix, iy, iw, ih, ""));
         getCurrentElem().appendChild(clipPath);
 
-        // vygenerovani elementu, na ktery bude gradient aplikovan
-        // navic je zde vytvoren i orezovy element clippath, ktery orizne element s gradientem na velikost puvodniho elementu
-        if (grad.isCircle)
+        // generate the background element
+        // additionally, a clip element is generated
+        if (grad.isCircle())
         {
             int max = Math.max(iw, ih);
             double x = (max == iw ? ix : ix - ((max - iw) * grad.cx / 100));
@@ -886,50 +921,49 @@ public class SVGDOMRenderer implements BoxRenderer
             Element e = createRect(x, y, grad.newWidth, grad.newHeight, style);
             e.setAttribute("clip-path", "url(#" + clip + ")");
             getCurrentElem().appendChild(e);
-            //getCurrentElem().appendChild(createRect(ix, y, iw, grad.newHeight, style));
         }
     }
-
-    /**
-     * metoda pro simulaci linearniho gradinetu
-     *
-     * @param eb
-     * @param angle
-     */
-    private void simulateLinearGradient(ElementBox eb, int angle)
+    
+    private void addLinearGradient(ElementBox eb, TermFunction.LinearGradient spec)
     {
+        CSSDecoder dec = new CSSDecoder(eb.getVisualContext());
+        
         Rectangle bb = eb.getAbsoluteBorderBounds();
-        // ziskani rozmeru elementu 
+        // obtain the element size 
         int ix = bb.x + eb.getBorder().left;
         int iy = bb.y + eb.getBorder().top;
         int iw = bb.width - eb.getBorder().right - eb.getBorder().left;
         int ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
 
-        // vygenerovani simulovaneho gradientu, tak jak je zadan v CSS
+        // gradient angle and size
         LinearGradient grad = new LinearGradient();
-        grad.data = new ArrayList<GradientStop>();
-        grad.data.add(new GradientStop(Color.decode("#A9CDC3"), 0));
-        grad.data.add(new GradientStop(Color.decode("#665178"), 20));
-        grad.data.add(new GradientStop(Color.decode("#ff0000"), 80));
-        grad.data.add(new GradientStop(Color.decode("#A9CDC3"), 100));
+        double angle = (spec.getAngle() != null) ? eb.getVisualContext().degAngle(spec.getAngle()) : 180.0;
         grad.setAngleDeg(angle, iw, ih);
-        //grad.isLinear = false;
+        // stops
+        for (TermFunction.Gradient.ColorStop stop : spec.getColorStops())
+        {
+            Color color = CSSUnits.convertColor(stop.getColor().getValue());
+            Float percentage = decodePercentage(eb, stop.getLength(), dec, iw); //TODO iw?
+            grad.addStop(new GradientStop(color, percentage));
+        }
+        grad.recomputeStops();
+        // generate code
         String url = "cssbox-gradient-" + idcounter;
         idcounter++;
-        // vygenerovani SVG gradientu, vcetne barevnych zastavek
+        // generate svg gradient incl. stops
         Element defs = createElement("defs");
         Element image;
         image = createElement("linearGradient");
-        image.setAttribute("x1", "" + Double.toString(grad.x1) + "%");
-        image.setAttribute("y1", "" + Double.toString(grad.y1) + "%");
-        image.setAttribute("x2", "" + Double.toString(grad.x2) + "%");
-        image.setAttribute("y2", "" + Double.toString(grad.y2) + "%");
+        image.setAttribute("x1", String.valueOf(grad.x1) + "%");
+        image.setAttribute("y1", String.valueOf(grad.y1) + "%");
+        image.setAttribute("x2", String.valueOf(grad.x2) + "%");
+        image.setAttribute("y2", String.valueOf(grad.y2) + "%");
         image.setAttribute("id", url);
-        for (int i = 0; i < grad.data.size(); i++)
+        for (int i = 0; i < grad.getStops().size(); i++)
         {
             Element stop = createElement("stop");
-            Color cc = grad.data.get(i).c;
-            stop.setAttribute("offset", "" + grad.data.get(i).i + "%");
+            Color cc = grad.getStops().get(i).getColor();
+            stop.setAttribute("offset", "" + grad.getStops().get(i).getPercentage() + "%");
             stop.setAttribute("style",
                     "stop-color:rgb(" + cc.getRed() + "," + cc.getGreen() + "," + cc.getBlue() + ");stop-opacity:1");
             image.appendChild(stop);
@@ -940,10 +974,50 @@ public class SVGDOMRenderer implements BoxRenderer
 
         String style = "stroke:none;fill-opacity:1;fill:url(#" + url + ");";
 
-        // vyggenerovani SVG elementu s gradientem jako pozadi
+        // generate the element with the gradient background
         getCurrentElem().appendChild(createRect(ix, iy, iw, ih, style));
     }
-
+    
+    private Float decodePercentage(ElementBox eb, TermLengthOrPercent spec, CSSDecoder dec, double wholeLength)
+    {
+        if (spec != null)
+        {
+            if (spec.isPercentage())
+            {
+                return spec.getValue();
+            }
+            else
+            {
+                int abs = dec.getLength(spec, false, 0, 0, 0);
+                return (float) ((abs / wholeLength) * 100.0);
+            }
+        }
+        else
+            return null;
+    }
+    
+    private RadialGradient.RadLengths decodeSizeIdent(TermIdent ident)
+    {
+        if (ident != null)
+        {
+            switch (ident.getValue())
+            {
+                case "closest-side":
+                    return RadialGradient.RadLengths.CLOSEST_SIDE;
+                case "closest-corner":
+                    return RadialGradient.RadLengths.CLOSEST_CORNER;
+                case "farthest-side":
+                    return RadialGradient.RadLengths.FARTHEST_SIDE;
+                case "farthest-corner":
+                    return RadialGradient.RadLengths.FARTHEST_CORNER;
+                default:
+                    return null;
+            }
+        }
+        else
+            return null;
+    }
+    
     public Element createPath(String dPath, String fill, String stroke, int strokeWidth)
     {
         Element e = createElement("path");

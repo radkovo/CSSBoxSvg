@@ -4,21 +4,40 @@ package org.fit.cssbox.svg.layout;
 import java.awt.Color;
 
 /**
- * Trida pro reprezentaci zastavky gradientu obsahuje hodnotu v procentech a
- * barvu
+ * A single color stop representation.
  * 
  * @author Martin Safar
+ * @author burgetr
  */
 public class GradientStop
 {
+    private Color color;
+    private Float percentage;
 
-    public Color c;
-    public int i;
-
-    public GradientStop(Color cVal, int iVal)
+    public GradientStop(Color color, Float percentage)
     {
-        c = cVal;
-        i = iVal;
+        this.color = color;
+        this.percentage = percentage;
+    }
+
+    public Color getColor()
+    {
+        return color;
+    }
+
+    public Float getPercentage()
+    {
+        return percentage;
+    }
+
+    public void setColor(Color color)
+    {
+        this.color = color;
+    }
+
+    public void setPercentage(Float percentage)
+    {
+        this.percentage = percentage;
     }
 
 }

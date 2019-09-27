@@ -6,16 +6,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 /**
- * trida pro reprezentaci a vypocet radialniho gradientu
+ * A radial gradient representation
  *
  * @author safar
+ * @author burgetr
  */
-public class RadialGradient
+public class RadialGradient extends Gradient
 {
-    public ArrayList<GradientStop> data;
-
     // prepinac urcujici, zda se jedna o kruznici nebo elipsu
-    public boolean isCircle;
+    private boolean circle;
 
     public int rxy;
 
@@ -43,19 +42,20 @@ public class RadialGradient
     public double newHeight;
     public double newWidth;
 
-    public enum radLengths
+    public enum RadLengths
     {
         CLOSEST_CORNER, CLOSEST_SIDE, FARTHEST_CORNER, FARTHEST_SIDE
     }
 
     /**
-     * v konstrukoru jsou ulozeny rozmery elementu
+     * Creates the radial gradient with the given size.
      *
      * @param rect
      */
     public RadialGradient(Rectangle rect)
     {
-        isCircle = false;
+        super();
+        circle = true;
         this.rect = rect;
         newRect = new Rectangle();
         newRect.x = rect.x;
@@ -64,9 +64,10 @@ public class RadialGradient
         newRect.height = rect.height;
     }
 
-    ///////////////////////////////
-    /// vypocet pro elipticky tvar gradientu
-    ///////////////////////////////
+    public boolean isCircle()
+    {
+        return circle;
+    }
 
     /**
      * tato metoda slouzi k vypoctu SVG parametru podle zadanych parametru z CSS
@@ -80,7 +81,7 @@ public class RadialGradient
      */
     public void setEllipseData(double rx, double ry, int sx, int sy)
     {
-        isCircle = false;
+        circle = false;
 
         cx = (double) sx / (double) rect.width * 100;
         fx = (double) sx / (double) rect.width * 100;
@@ -129,7 +130,7 @@ public class RadialGradient
      * @param sx
      * @param sy
      */
-    public void setEllipseDataRadLengths(radLengths rl, int sx, int sy)
+    public void setEllipseDataRadLengths(RadLengths rl, int sx, int sy)
     {
         double rx = 0;
         double ry = 0;
@@ -236,9 +237,6 @@ public class RadialGradient
 
     }
 
-    /////////////
-    /// vypocet pro kruznicovy tvar gradientu
-    /////////////
     /**
      * prepocet zadanych rozmeru a souradnic stredu gradientu na procentualni
      * vyjadreni vzhledem k rozmerum elementu
@@ -249,7 +247,7 @@ public class RadialGradient
      */
     public void setCircleData(double rxy, int sx, int sy)
     {
-        isCircle = true;
+        circle = true;
 
         cx = (double) sx / (double) rect.width * 100;
         fx = (double) sx / (double) rect.width * 100;
@@ -280,7 +278,7 @@ public class RadialGradient
      * @param sx
      * @param sy
      */
-    public void setCircleDataRadLengths(radLengths rl, int sx, int sy)
+    public void setCircleDataRadLengths(RadLengths rl, int sx, int sy)
     {
         double rxy = 0;
         ArrayList<Double> l;
@@ -296,7 +294,6 @@ public class RadialGradient
                 break;
             case FARTHEST_CORNER:
                 l = getAllCornersDistance(sx, sy);
-
                 rxy = Collections.max(l);
                 break;
             case FARTHEST_SIDE:
@@ -307,7 +304,7 @@ public class RadialGradient
         setCircleData(rxy, sx, sy);
     }
 
-    public void setCircleDataPercentRadLengths(radLengths rl, int sxp, int syp)
+    public void setCircleDataPercentRadLengths(RadLengths rl, int sxp, int syp)
     {
         setCircleDataRadLengths(rl, sxp * rect.width / 100, syp * rect.height / 100);
     }
