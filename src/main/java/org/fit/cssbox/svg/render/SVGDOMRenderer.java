@@ -939,11 +939,19 @@ public class SVGDOMRenderer implements BoxRenderer
         LinearGradient grad = new LinearGradient();
         double angle = (spec.getAngle() != null) ? eb.getVisualContext().degAngle(spec.getAngle()) : 180.0;
         grad.setAngleDeg(angle, iw, ih);
+        System.out.println("iw=" + iw + " ih=" + ih + " " 
+                + " x1=" + grad.x1
+                + " y1=" + grad.y1
+                + " x2=" + grad.x2
+                + " y2=" + grad.y2
+                + " a=" + angle
+                );
+        System.out.println("len=" + grad.getGradientLength(iw, ih));
         // stops
         for (TermFunction.Gradient.ColorStop stop : spec.getColorStops())
         {
             Color color = CSSUnits.convertColor(stop.getColor().getValue());
-            Float percentage = decodePercentage(eb, stop.getLength(), dec, iw); //TODO iw?
+            Float percentage = decodePercentage(eb, stop.getLength(), dec, Math.sqrt(iw*iw+ih*ih)); //TODO iw?
             grad.addStop(new GradientStop(color, percentage));
         }
         grad.recomputeStops();
