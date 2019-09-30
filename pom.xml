@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.sf.cssbox</groupId>
     <artifactId>cssbox-svg</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
 	<description>
 	SVG renderer for the CSSBox rendering engine.
@@ -35,7 +35,7 @@
 		<url>https://github.com/radkovo/CSSBoxSvg</url>
 		<connection>scm:git:git@github.com:radkovo/CSSBoxSvg.git</connection>
 		<developerConnection>scm:git:git@github.com:radkovo/CSSBoxSvg.git</developerConnection>
-		<tag>HEAD</tag>
+		<tag>cssbox-svg-1.0</tag>
 	</scm>
 
     <properties>
