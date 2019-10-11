@@ -674,21 +674,24 @@ public class SVGDOMRenderer implements BoxRenderer
      * @param eb
      * @param b
      */
-    private void writeBorders(ElementBox eb, Border b)
+    private boolean writeBorders(ElementBox eb, Border b)
     {
-        LengthSet borders = b.border;
+        boolean ret = false;
+        final LengthSet borders = b.border;
 
-        // vygenerovani rovnych casti ramecku
-        writeBorderSVG(eb, b.topLeftH, b.topRightH, "top", borders.top);
-        writeBorderSVG(eb, b.topRightV, b.bottomRightV, "right", borders.right);
-        writeBorderSVG(eb, b.bottomLeftH, b.bottomRightH, "bottom", borders.bottom);
-        writeBorderSVG(eb, b.topLeftV, b.bottomLeftV, "left", borders.left);
+        // generate borders
+        ret |= writeBorderSVG(eb, b.topLeftH, b.topRightH, "top", borders.top);
+        ret |= writeBorderSVG(eb, b.topRightV, b.bottomRightV, "right", borders.right);
+        ret |= writeBorderSVG(eb, b.bottomLeftH, b.bottomRightH, "bottom", borders.bottom);
+        ret |= writeBorderSVG(eb, b.topLeftV, b.bottomLeftV, "left", borders.left);
 
-        // vygenerovani jednotlivych rohu
-        writeBorderCorner(b, 1);
-        writeBorderCorner(b, 2);
-        writeBorderCorner(b, 3);
-        writeBorderCorner(b, 4);
+        // generate corners
+        ret |= writeBorderCorner(b, 1);
+        ret |= writeBorderCorner(b, 2);
+        ret |= writeBorderCorner(b, 3);
+        ret |= writeBorderCorner(b, 4);
+        
+        return ret;
     }
 
     /**
@@ -696,7 +699,7 @@ public class SVGDOMRenderer implements BoxRenderer
      * @param border
      * @param s
      */
-    private void writeBorderCorner(Border border, int s)
+    private boolean writeBorderCorner(Border border, int s)
     {
         int rady, radx;
         CornerRadius cr = border.getRadius(s);
@@ -713,7 +716,6 @@ public class SVGDOMRenderer implements BoxRenderer
         { // top-right
             widthHor = border.border.right;
             widthVer = border.border.top;
-
             ccc1 = border.colorRight;
             ccc2 = border.colorTop;
         }
@@ -728,7 +730,6 @@ public class SVGDOMRenderer implements BoxRenderer
         { // bottomright
             widthHor = border.border.right;
             widthVer = border.border.bottom;
-
             ccc1 = border.colorBottom;
             ccc2 = border.colorRight;
         }
@@ -736,48 +737,31 @@ public class SVGDOMRenderer implements BoxRenderer
         { // bottomleft
             widthHor = border.border.left;
             widthVer = border.border.bottom;
-
             ccc1 = border.colorLeft;
             ccc2 = border.colorBottom;
         }
-        String cString1;
-        String cString2;
-        if (ccc1 != null)
+        
+        if (ccc1 != null && ccc2 != null)
         {
-            cString1 = colorString(ccc1);
+            final String cString1 = colorString(ccc1);
+            final String cString2 = colorString(ccc2);
+    
+            String path1 = cr.getPathRadiusC(widthVer, widthHor);
+            String path2 = cr.getPathRadiusA(widthVer, widthHor);
+    
+            if (widthVer > rady || widthHor > radx)
+            {
+                cr.isDrawn = false;
+            }
+    
+            Element q = createPath(path1, cString1, "none", 1);
+            getCurrentElem().appendChild(q);
+            q = createPath(path2, cString2, "none", 1);
+            getCurrentElem().appendChild(q);
+            return true;
         }
         else
-        {
-            cString1 = "none";
-        }
-        if (ccc2 != null)
-        {
-            cString2 = colorString(ccc2);
-        }
-        else
-        {
-            cString2 = "none";
-        }
-
-        Element q;
-        String path1 = "", path2 = "";
-        // vygenerovani prislusnych SVG atributu pro element path
-
-        path1 = cr.getPathRadiusC(widthVer, widthHor);
-        path2 = cr.getPathRadiusA(widthVer, widthHor);
-
-        if (widthVer > rady || widthHor > radx)
-        {
-            cr.isDrawn = false;
-        }
-
-        // vzgenerovani SVG elementu path, ktere tvori zaobleny ramecek
-        q = createPath(path1, cString1, "none", 1);
-        getCurrentElem().appendChild(q);
-
-        q = createPath(path2, cString2, "none", 1);
-        getCurrentElem().appendChild(q);
-
+            return false;
     }
 
     /**
@@ -787,12 +771,16 @@ public class SVGDOMRenderer implements BoxRenderer
      * @param b
      * @param side
      * @param width
+     * @return {@code true} when something has been written
      */
-    private void writeBorderSVG(ElementBox eb, Point a, Point b, String side, int width)
+    private boolean writeBorderSVG(ElementBox eb, Point a, Point b, String side, int width)
     {
         TermColor tclr = eb.getStyle().getValue(TermColor.class, "border-" + side + "-color");
         CSSProperty.BorderStyle bst = eb.getStyle().getProperty("border-" + side + "-style");
-        if (bst != CSSProperty.BorderStyle.HIDDEN && (tclr == null || !tclr.isTransparent()))
+        if (bst != null
+                && bst != CSSProperty.BorderStyle.NONE
+                && bst != CSSProperty.BorderStyle.HIDDEN 
+                && (tclr == null || !tclr.isTransparent()))
         {
             Color clr = null;
             if (tclr != null)
@@ -813,28 +801,27 @@ public class SVGDOMRenderer implements BoxRenderer
                 case "left":
                     coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y + " L " + (b.x + width) + "," + b.y
                             + " L " + (a.x + width) + "," + a.y;
-
                     break;
                 case "top":
                     coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y + " L " + (b.x) + "," + (b.y + width)
                             + " L " + a.x + "," + (a.y + width);
-
                     break;
                 case "right":
                     coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y + " L " + (b.x - width) + "," + b.y
                             + " L " + (a.x - width) + "," + a.y;
-
                     break;
                 case "bottom":
                     coords = "M " + a.x + "," + a.y + " L " + b.x + "," + b.y + " L " + (b.x) + "," + (b.y - width)
                             + " L " + a.x + "," + (a.y - width);
-
                     break;
             }
 
             Element path = createPath(coords, colorString(clr), colorString(clr), 0);
             getCurrentElem().appendChild(path);
+            return true;
         }
+        else
+            return false;
     }
 
     private void addRadialGradient(ElementBox eb, TermFunction.RadialGradient spec)
