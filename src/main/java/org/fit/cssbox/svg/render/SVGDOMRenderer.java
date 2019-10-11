@@ -18,6 +18,7 @@ import cz.vutbr.web.css.TermIdent;
 import cz.vutbr.web.css.TermLengthOrPercent;
 
 import java.awt.Point;
+import java.util.Collection;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -459,15 +460,16 @@ public class SVGDOMRenderer implements BoxRenderer
                 + (ctx.getFont().isBold() ? "bold" : "normal") + ";" + "font-style:"
                 + (ctx.getFont().isItalic() ? "italic" : "normal") + ";" + "font-family:" + ctx.getFont().getFamily()
                 + ";" + "fill:" + colorString(ctx.getColor()) + ";" + "stroke:none";
-        if (!ctx.getTextDecoration().isEmpty()) style += ";text-decoration:" + ctx.getTextDecorationString();
-        if (ctx.getLetterSpacing() > 0.0001) style += ";letter-spacing:" + ctx.getLetterSpacing() + "px";
+        if (ctx.getLetterSpacing() > 0.0001)
+            style += ";letter-spacing:" + ctx.getLetterSpacing() + "px";
         return style;
     }
 
     public void renderTextContent(TextBox text)
     {
         Rectangle b = text.getAbsoluteBounds();
-        String style = textStyle(text.getVisualContext());
+        String style = textStyle(text.getVisualContext())
+                + ";" + textDecorationStyle(text.getEfficientTextDecoration());
         if (text.getWordSpacing() == null && text.getExtraWidth() == 0)
             addText(getCurrentElem(), b.x, b.y + text.getBaselineOffset(), b.width, b.height, style, text.getText());
         else
@@ -577,6 +579,25 @@ public class SVGDOMRenderer implements BoxRenderer
     private String colorString(Color color)
     {
         return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+    }
+
+    private String textDecorationStyle(Collection<CSSProperty.TextDecoration> textDecoration)
+    {
+        if (textDecoration.isEmpty())
+            return "text-decoration:none";
+        else
+        {
+            boolean first = true;
+            StringBuilder ret = new StringBuilder("text-decoration:");
+            for (CSSProperty.TextDecoration dec : textDecoration)
+            {
+                if (!first)
+                    ret.append(' ');
+                ret.append(dec.toString());
+                first = false;
+            }
+            return ret.toString();
+        }
     }
 
     /**
