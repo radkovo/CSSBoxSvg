@@ -250,11 +250,13 @@ public class SVGDOMRenderer implements BoxRenderer
             TermFunction.Gradient gradFunction = eb.getStyle().getValue(TermFunction.Gradient.class, "background-image");
             if (gradFunction instanceof TermFunction.LinearGradient)
             {
-                addLinearGradient(eb, (TermFunction.LinearGradient) gradFunction);
+                addLinearGradient(eb, (TermFunction.LinearGradient) gradFunction, bgWrap);
+                bgUsed = true;
             }
             else if (gradFunction instanceof TermFunction.RadialGradient)
             {
-                addRadialGradient(eb, (TermFunction.RadialGradient) gradFunction);
+                addRadialGradient(eb, (TermFunction.RadialGradient) gradFunction, bgWrap);
+                bgUsed = true;
             }
         }
         
@@ -271,7 +273,7 @@ public class SVGDOMRenderer implements BoxRenderer
             bgUsed = true;
         }
 
-        // pozadi urcene obrazkem
+        // image background
         if (eb.getBackgroundImages() != null && eb.getBackgroundImages().size() > 0)
         {
             for (BackgroundImage bimg : eb.getBackgroundImages())
@@ -836,7 +838,7 @@ public class SVGDOMRenderer implements BoxRenderer
             return false;
     }
 
-    private void addRadialGradient(ElementBox eb, TermFunction.RadialGradient spec)
+    private void addRadialGradient(ElementBox eb, TermFunction.RadialGradient spec, Element dest)
     {
         CSSDecoder dec = new CSSDecoder(eb.getVisualContext());
         
@@ -912,14 +914,14 @@ public class SVGDOMRenderer implements BoxRenderer
         }
 
         defs.appendChild(image);
-        getCurrentElem().appendChild(defs);
+        dest.appendChild(defs);
         String style = "stroke:none;fill-opacity:1;fill:url(#" + url + ");";
         String clip = "cssbox-clip-" + idcounter;
         Element clipPath = createElement("clipPath");
         clipPath.setAttribute("id", clip);
 
         clipPath.appendChild(createRect(ix, iy, iw, ih, ""));
-        getCurrentElem().appendChild(clipPath);
+        dest.appendChild(clipPath);
 
         // generate the background element
         // additionally, a clip element is generated
@@ -930,7 +932,7 @@ public class SVGDOMRenderer implements BoxRenderer
             double y = (max == ih ? iy : iy - ((max - ih) * grad.cy / 100));
             Element e = createRect(x, y, max, max, style);
             e.setAttribute("clip-path", "url(#" + clip + ")");
-            getCurrentElem().appendChild(e);
+            dest.appendChild(e);
         }
         else
         {
@@ -940,11 +942,11 @@ public class SVGDOMRenderer implements BoxRenderer
 
             Element e = createRect(x, y, grad.newWidth, grad.newHeight, style);
             e.setAttribute("clip-path", "url(#" + clip + ")");
-            getCurrentElem().appendChild(e);
+            dest.appendChild(e);
         }
     }
     
-    private void addLinearGradient(ElementBox eb, TermFunction.LinearGradient spec)
+    private void addLinearGradient(ElementBox eb, TermFunction.LinearGradient spec, Element dest)
     {
         CSSDecoder dec = new CSSDecoder(eb.getVisualContext());
         
@@ -998,12 +1000,12 @@ public class SVGDOMRenderer implements BoxRenderer
         }
 
         defs.appendChild(image);
-        getCurrentElem().appendChild(defs);
+        dest.appendChild(defs);
 
         String style = "stroke:none;fill-opacity:1;fill:url(#" + url + ");";
 
         // generate the element with the gradient background
-        getCurrentElem().appendChild(createRect(ix, iy, iw, ih, style));
+        dest.appendChild(createRect(ix, iy, iw, ih, style));
     }
     
     private Float decodePercentage(ElementBox eb, TermLengthOrPercent spec, CSSDecoder dec, double wholeLength)
