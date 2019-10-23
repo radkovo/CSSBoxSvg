@@ -86,8 +86,6 @@ public class SVGDOMRenderer implements BoxRenderer
 
     private boolean streamResult;
 
-    private Element backgroundStore;
-
     /**
      *
      * @param rootWidth
@@ -98,7 +96,6 @@ public class SVGDOMRenderer implements BoxRenderer
     {
         elemStack = new Stack<Element>();
         doc = createDocument();
-        backgroundStore = null;
         idcounter = 1;
         rootw = rootWidth;
         rooth = rootHeight;
@@ -117,7 +114,6 @@ public class SVGDOMRenderer implements BoxRenderer
     {
         elemStack = new Stack<Element>();
         doc = createDocument();
-        backgroundStore = null;
         idcounter = 1;
         rootw = rootWidth;
         rooth = rootHeight;
@@ -198,7 +194,7 @@ public class SVGDOMRenderer implements BoxRenderer
 
         boolean useGroup = false;
         final Element g = createElement("g");
-        if (elem instanceof BlockBox && ((BlockBox) elem).getOverflowX() != BlockBox.OVERFLOW_VISIBLE)
+        if (clippingUsed(elem))
         {
             final Rectangle cb = elem.getClippedContentBounds();
             final String clip = "cssbox-clip-" + idcounter;
@@ -242,13 +238,11 @@ public class SVGDOMRenderer implements BoxRenderer
 
     public void renderElementBackground(ElementBox eb)
     {
-        backgroundStore = createElement("g");
-
+        Element backgroundStore = createElement("g");
         backgroundStore.setAttribute("id", "bgstore" + (idcounter++));
 
-        //elemStack.push(backgroundStore);
-        Element wrap;
-        wrap = createElement("g");
+        Element bgWrap = createElement("g"); //background wrapper
+        boolean bgUsed = false;
 
         final CSSProperty.BackgroundImage bgImageSpec = eb.getStyle().getProperty("background-image");
         if (bgImageSpec == CSSProperty.BackgroundImage.gradient)
@@ -269,11 +263,12 @@ public class SVGDOMRenderer implements BoxRenderer
         {
             bb = eb.getClippedBounds();
         }
-        Color bg = eb.getBgcolor();
-        if (bg != null)
-        { // pozadi urcene barvou
-            String style = "stroke:none;fill-opacity:1;fill:" + colorString(bg);
-            wrap.appendChild(createRect(bb.x, bb.y, bb.width, bb.height, style));
+        final Color bg = eb.getBgcolor();
+        if (bg != null) // color background
+        {
+            final String style = "stroke:none;fill-opacity:1;fill:" + colorString(bg);
+            bgWrap.appendChild(createRect(bb.x, bb.y, bb.width, bb.height, style));
+            bgUsed = true;
         }
 
         // pozadi urcene obrazkem
@@ -298,52 +293,59 @@ public class SVGDOMRenderer implements BoxRenderer
                     int iy = bb.y + eb.getBorder().top;
                     int iw = bb.width - eb.getBorder().right - eb.getBorder().left;
                     int ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
-                    wrap.appendChild(createImage(ix, iy, iw, ih, imgdata));
+                    bgWrap.appendChild(createImage(ix, iy, iw, ih, imgdata));
+                    bgUsed = true;
                 }
             }
-
         }
 
-        // vygenerovani obaloveho elementu pro ramecek
+        // generate a border group
         final Element gBorder = createElement("g");
         gBorder.setAttribute("id", "borders-" + (idcounter++));
-        // obalovy element se nastavi jako hlavni
+        // generate border parts
         elemStack.push(gBorder);
-        // nasledne je vygenerovan ramecek pro cely element
         final Border border = new Border(eb.getBorder(), bb, eb);
-        writeBorders(eb, border);
-
+        final boolean bordersUsed = writeBorders(eb, border);
         elemStack.pop();
-        //border
-        final String clip = "cssbox-clip-" + (idcounter++);
-        // podle vnejsi hranice ramecku je vygenerovan orezovy element
-        final Element clipPath = createElement("clipPath");
-        clipPath.setAttribute("id", clip);
-        final Element q = getClipPathElementForBorder(border);
-        clipPath.appendChild(q);
-        wrap.setAttribute("clip-path", "url(#" + clip + ")");
-
-        backgroundStore.appendChild(clipPath);
-
-        backgroundStore.appendChild(wrap);
-        backgroundStore.appendChild(gBorder);
-
-        // pokud je na element aplikovana transformace, vygeneruje se prislusny transformacni paremtr
-        Transform t = new Transform();
-        String tm = t.createTransform(eb);
-        if (!tm.equals(""))
+        
+        // create a clip element for the border if necessary
+        if (bordersUsed || clippingUsed(eb))
         {
-            backgroundStore.setAttribute("transform", tm);
+            final String clipId = "cssbox-clip-" + (idcounter++);
+            final Element clipPath = createElement("clipPath");
+            clipPath.setAttribute("id", clipId);
+            final Element q = getClipPathElementForBorder(border);
+            clipPath.appendChild(q);
+            bgWrap.setAttribute("clip-path", "url(#" + clipId + ")");
+            bgUsed = true;
+            backgroundStore.appendChild(clipPath);
         }
+        // append the wrapper and borders when used
+        if (bgUsed)
+            backgroundStore.appendChild(bgWrap);
+        if (bordersUsed)
+            backgroundStore.appendChild(gBorder);
 
-        // pokud je na element aplikovana pruhlednost, vygeneruje se prislusny parametr do elementu
-        String opacity = eb.getStylePropertyValue("opacity");
-        if (opacity != "")
+        // append the whole backgound group when something was used
+        if (bgUsed || bordersUsed)
         {
-            backgroundStore.setAttribute("opacity", opacity);
+            // if transform was used, transform the backgound as well
+            final Transform t = new Transform();
+            final String tm = t.createTransform(eb);
+            if (!tm.isEmpty())
+            {
+                backgroundStore.setAttribute("transform", tm);
+            }
+    
+            // if opacity is applied to the element, make the background opaque as well
+            final String opacity = eb.getStylePropertyValue("opacity");
+            if (!opacity.isEmpty())
+            {
+                backgroundStore.setAttribute("opacity", opacity);
+            }
+    
+            getCurrentElem().appendChild(backgroundStore);
         }
-
-        getCurrentElem().appendChild(backgroundStore);
     }
 
     @Override
@@ -601,6 +603,16 @@ public class SVGDOMRenderer implements BoxRenderer
     }
 
     /**
+     * Checks whether the clipping is necessary for the element: it has overflow different from visible.
+     * @param elem
+     * @return
+     */
+    private boolean clippingUsed(ElementBox elem)
+    {
+        return (elem instanceof BlockBox && ((BlockBox) elem).getOverflowX() != BlockBox.OVERFLOW_VISIBLE);
+    }
+    
+    /**
      *
      * @param border
      * @return
@@ -673,6 +685,7 @@ public class SVGDOMRenderer implements BoxRenderer
      *
      * @param eb
      * @param b
+     * @return {@code true} when something has been written, {@code false} means empty borders
      */
     private boolean writeBorders(ElementBox eb, Border b)
     {
