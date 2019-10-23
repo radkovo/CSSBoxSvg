@@ -718,10 +718,9 @@ public class SVGDOMRenderer implements BoxRenderer
         CornerRadius cr = border.getRadius(s);
         radx = cr.x;
         rady = cr.y;
-        // if (radx != 0 || rady != 0) {
 
-        TermColor ccc1;
-        TermColor ccc2;
+        TermColor startColor;
+        TermColor stopColor;
         int widthHor, widthVer;
 
         // podle toho, ktery roh je vykreslovan ziskame sirky ramecku a barvy v prislusnych smerech 
@@ -729,35 +728,35 @@ public class SVGDOMRenderer implements BoxRenderer
         { // top-right
             widthHor = border.border.right;
             widthVer = border.border.top;
-            ccc1 = border.colorRight;
-            ccc2 = border.colorTop;
+            startColor = border.colorRight;
+            stopColor = border.colorTop;
         }
         else if (s == 2)
         { // topleft
             widthHor = border.border.left;
             widthVer = border.border.top;
-            ccc1 = border.colorTop;
-            ccc2 = border.colorLeft;
+            startColor = border.colorTop;
+            stopColor = border.colorLeft;
         }
         else if (s == 3)
         { // bottomright
             widthHor = border.border.right;
             widthVer = border.border.bottom;
-            ccc1 = border.colorBottom;
-            ccc2 = border.colorRight;
+            startColor = border.colorBottom;
+            stopColor = border.colorRight;
         }
         else
         { // bottomleft
             widthHor = border.border.left;
             widthVer = border.border.bottom;
-            ccc1 = border.colorLeft;
-            ccc2 = border.colorBottom;
+            startColor = border.colorLeft;
+            stopColor = border.colorBottom;
         }
         
-        if (ccc1 != null && ccc2 != null)
+        if (startColor != null && stopColor != null)
         {
-            final String cString1 = colorString(ccc1);
-            final String cString2 = colorString(ccc2);
+            final String cString1 = colorString(startColor);
+            final String cString2 = colorString(stopColor);
     
             String path1 = cr.getPathRadiusC(widthVer, widthHor);
             String path2 = cr.getPathRadiusA(widthVer, widthHor);

@@ -5,9 +5,10 @@ import java.awt.Point;
 import java.awt.Rectangle;
 
 /**
- * trida pro reprezentaci rohu ramecku
+ * A single border corner representaton
  *
  * @author Martin Safar
+ * @author burgetr
  */
 public class CornerRadius
 {

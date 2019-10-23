@@ -6,11 +6,18 @@
 
 package org.fit.cssbox.svg.layout;
 
+import cz.vutbr.web.css.CSSProperty;
+import cz.vutbr.web.css.NodeData;
 import cz.vutbr.web.css.TermColor;
+import cz.vutbr.web.css.TermLengthOrPercent;
+import cz.vutbr.web.css.TermList;
+
 import java.awt.Point;
 import java.awt.Rectangle;
 import static java.lang.Integer.max;
 import java.util.ArrayList;
+
+import org.fit.cssbox.layout.CSSDecoder;
 import org.fit.cssbox.layout.ElementBox;
 import org.fit.cssbox.layout.LengthSet;
 
@@ -72,10 +79,11 @@ public class Border
         bottomLeftV = new Point();
 
         // vygenerovani tridy pro reprezentaci rohu ramecku pro kazdy roh
-        setRadiusByStyle(1, eb.getStylePropertyValue("border-top-right-radius"));
-        setRadiusByStyle(2, eb.getStylePropertyValue("border-top-left-radius"));
-        setRadiusByStyle(3, eb.getStylePropertyValue("border-bottom-right-radius"));
-        setRadiusByStyle(4, eb.getStylePropertyValue("border-bottom-left-radius"));
+        final CSSDecoder dec = new CSSDecoder(eb.getVisualContext());
+        setRadiusByStyle(1, eb.getStyle(), dec, "border-top-right-radius");
+        setRadiusByStyle(2, eb.getStyle(), dec, "border-top-left-radius");
+        setRadiusByStyle(3, eb.getStyle(), dec, "border-bottom-right-radius");
+        setRadiusByStyle(4, eb.getStyle(), dec, "border-bottom-left-radius");
 
         // nastaveni barev jednotlivych stran
         colorTop = eb.getStyle().getValue(TermColor.class, "border-top-color");
@@ -93,9 +101,9 @@ public class Border
     }
 
     /**
-     * trida podle identifikatoru vraci prislusny roh ramecku
+     * Gets the corner radius for the given corner.
      *
-     * @param s
+     * @param s The corner index (1..4)
      * @return
      */
     public CornerRadius getRadius(int s)
@@ -115,38 +123,31 @@ public class Border
     }
 
     /**
-     * v teto tride jsou ziskany CSS styly k jednotlivym rohum a nich je ziskana
-     * hodnota zaobleni ramecku
-     *
-     * @param s
-     * @param radiusStyle
+     * Sets the corner radius by the element style.
+     * @param s the corner index (1..4)
+     * @param style the element style
+     * @param dec the CSS decoder used to transform the CSS lengths to pixels
+     * @param propertyName the property name to use (e.g. "border-top-right-radius")
      */
-    private void setRadiusByStyle(int s, String radiusStyle)
+    private void setRadiusByStyle(int s, NodeData style, CSSDecoder dec, String propertyName)
     {
-        String[] parts = radiusStyle.trim().split(" ");
+        TermList vals = null;
+        CSSProperty.BorderRadius r = style.getProperty(propertyName);
+        if (r == CSSProperty.BorderRadius.list_values)
+            vals = style.getValue(TermList.class, propertyName);
+        
         int radx, rady;
-        //System.out.println(radiusStyle);
-        if (parts.length > 2)
+        if (vals != null && vals.size() == 2)
         {
-            String part1 = parts[0].replaceAll("[\\D]", "");
-            String part2 = parts[2].replaceAll("[\\D]", "");
-
-            radx = Integer.parseInt(part1);
-            rady = Integer.parseInt(part2);
-        }
-        else if (parts.length > 1)
-        {
-            String part1 = parts[0].replaceAll("[\\D]", "");
-            String part2 = parts[1].replaceAll("[\\D]", "");
-
-            radx = Integer.parseInt(part1);
-            rady = Integer.parseInt(part2);
+            radx = dec.getLength((TermLengthOrPercent) vals.get(0), false, 0, 0, borderBounds.width);
+            rady = dec.getLength((TermLengthOrPercent) vals.get(1), false, 0, 0, borderBounds.height);
         }
         else
         {
             radx = 0;
             rady = 0;
         }
+        
         if (radx > borderBounds.width / 2)
         {
             radx = borderBounds.width / 2;
@@ -173,7 +174,7 @@ public class Border
                 break;
         }
     }
-
+    
     /**
      * metoda por dopocitani hranicnich bodu hranicni body se dopocitavaji podle
      * rozmeru elementu, velikosti zaobleni rohu a sirky jednotlivych stran
