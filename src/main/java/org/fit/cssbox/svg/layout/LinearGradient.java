@@ -20,7 +20,7 @@ public class LinearGradient extends Gradient
         super();
     }
     
-    public double getGradientLength(int w, int h)
+    public double getGradientLength(float w, float h)
     {
         final double dx = Math.abs((x2 - x1) * w / 100.0);
         final double dy = Math.abs((y2 - y1) * h / 100.0);
@@ -34,7 +34,7 @@ public class LinearGradient extends Gradient
      * @param w containing element width
      * @param h containing element height
      */
-    public void setAngleDeg(double deg, int w, int h)
+    public void setAngleDeg(double deg, float w, float h)
     {
         double procDeg = (deg % 360 + 360) % 360;
         double normDeg = 90 - procDeg;
@@ -49,21 +49,21 @@ public class LinearGradient extends Gradient
         h = 100;
 
         //element center
-        int sx = w / 2;
-        int sy = h / 2;
+        float sx = w / 2;
+        float sy = h / 2;
 
         //element corners (A, B, C, D)
-        int ax = 0;
-        int ay = 0;
+        float ax = 0;
+        float ay = 0;
 
-        int bx = w;
-        int by = 0;
+        float bx = w;
+        float by = 0;
 
-        int cx = w;
-        int cy = h;
+        float cx = w;
+        float cy = h;
 
-        int dx = 0;
-        int dy = h;
+        float dx = 0;
+        float dy = h;
 
         //treat special angles
         if (procDeg == 0)

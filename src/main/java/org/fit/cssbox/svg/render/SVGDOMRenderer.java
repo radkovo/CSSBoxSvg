@@ -1,8 +1,6 @@
 
 package org.fit.cssbox.svg.render;
 
-import java.awt.Color;
-import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,8 +14,8 @@ import cz.vutbr.web.css.TermColor;
 import cz.vutbr.web.css.TermFunction;
 import cz.vutbr.web.css.TermIdent;
 import cz.vutbr.web.css.TermLengthOrPercent;
+import cz.vutbr.web.csskit.Color;
 
-import java.awt.Point;
 import java.util.Collection;
 import java.util.Stack;
 import java.util.logging.Level;
@@ -34,13 +32,13 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 
-import org.fit.cssbox.css.CSSUnits;
 import org.fit.cssbox.layout.BackgroundImage;
 import org.fit.cssbox.layout.BlockBox;
 import org.fit.cssbox.layout.Box;
 import org.fit.cssbox.layout.CSSDecoder;
 import org.fit.cssbox.layout.LengthSet;
 import org.fit.cssbox.layout.ListItemBox;
+import org.fit.cssbox.layout.Rectangle;
 import org.fit.cssbox.layout.ReplacedContent;
 import org.fit.cssbox.layout.ReplacedImage;
 import org.fit.cssbox.layout.ReplacedText;
@@ -50,6 +48,7 @@ import org.fit.cssbox.misc.Base64Coder;
 import org.fit.cssbox.render.BoxRenderer;
 import org.fit.cssbox.svg.layout.Border;
 import org.fit.cssbox.svg.layout.CornerRadius;
+import org.fit.cssbox.svg.layout.DPoint;
 import org.fit.cssbox.svg.layout.GradientStop;
 import org.fit.cssbox.svg.layout.LinearGradient;
 import org.fit.cssbox.svg.layout.RadialGradient;
@@ -70,8 +69,8 @@ public class SVGDOMRenderer implements BoxRenderer
 {
     private PrintWriter out;
 
-    private int rootw;
-    private int rooth;
+    private float rootw;
+    private float rooth;
 
     private int idcounter;
 
@@ -92,7 +91,7 @@ public class SVGDOMRenderer implements BoxRenderer
      * @param rootHeight
      * @param out
      */
-    public SVGDOMRenderer(int rootWidth, int rootHeight, Writer out)
+    public SVGDOMRenderer(float rootWidth, float rootHeight, Writer out)
     {
         elemStack = new Stack<Element>();
         doc = createDocument();
@@ -110,7 +109,7 @@ public class SVGDOMRenderer implements BoxRenderer
      * @param rootWidth
      * @param rootHeight
      */
-    public SVGDOMRenderer(int rootWidth, int rootHeight)
+    public SVGDOMRenderer(float rootWidth, float rootHeight)
     {
         elemStack = new Stack<Element>();
         doc = createDocument();
@@ -155,8 +154,8 @@ public class SVGDOMRenderer implements BoxRenderer
         svgRoot = doc.getDocumentElement();
         elemStack.push(svgRoot);
 
-        svgRoot.setAttribute("width", Integer.toString(rootw) + "px");
-        svgRoot.setAttribute("height", Integer.toString(rooth) + "px");
+        svgRoot.setAttribute("width", Float.toString(rootw) + "px");
+        svgRoot.setAttribute("height", Float.toString(rooth) + "px");
         svgRoot.setAttribute("viewBox", "0 0 " + rootw + " " + rooth);
         svgRoot.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:xlink", xlinkNS);
         
@@ -291,10 +290,10 @@ public class SVGDOMRenderer implements BoxRenderer
                     }
                     char[] data = Base64Coder.encode(os.toByteArray());
                     String imgdata = "data:image/png;base64," + new String(data);
-                    int ix = bb.x + eb.getBorder().left;
-                    int iy = bb.y + eb.getBorder().top;
-                    int iw = bb.width - eb.getBorder().right - eb.getBorder().left;
-                    int ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
+                    float ix = bb.x + eb.getBorder().left;
+                    float iy = bb.y + eb.getBorder().top;
+                    float iw = bb.width - eb.getBorder().right - eb.getBorder().left;
+                    float ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
                     bgWrap.appendChild(createImage(ix, iy, iw, ih, imgdata));
                     bgUsed = true;
                 }
@@ -364,10 +363,10 @@ public class SVGDOMRenderer implements BoxRenderer
     private boolean writeMarkerImage(ListItemBox lb)
     {
         VisualContext ctx = lb.getVisualContext();
-        int ofs = lb.getFirstInlineBoxBaseline();
+        float ofs = lb.getFirstInlineBoxBaseline();
         if (ofs == -1) ofs = ctx.getBaselineOffset(); //use the font baseline
-        int x = (int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm());
-        int y = lb.getAbsoluteContentY() + ofs;
+        float x = Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm());
+        float y = lb.getAbsoluteContentY() + ofs;
         BufferedImage img = lb.getMarkerImage().getBufferedImage();
         if (img != null)
         {
@@ -381,16 +380,16 @@ public class SVGDOMRenderer implements BoxRenderer
             }
             char[] data = Base64Coder.encode(os.toByteArray());
             String imgdata = "data:image/png;base64," + new String(data);
-            int iw = img.getWidth();
-            int ih = img.getHeight();
-            int ix = x - iw;
-            int iy = y - ih;
+            float iw = img.getWidth();
+            float ih = img.getHeight();
+            float ix = x - iw;
+            float iy = y - ih;
             //out.println("<image x=\"" + ix + "\" y=\"" + iy + "\" width=\"" + iw + "\" height=\"" + ih + "\" xlink:href=\"" + imgdata + "\" />");
             Element image = doc.createElementNS(svgNS, "image");
-            image.setAttribute("x", Integer.toString(ix));
-            image.setAttribute("y", Integer.toString(iy));
-            image.setAttribute("width", Integer.toString(iw));
-            image.setAttribute("height", Integer.toString(ih));
+            image.setAttribute("x", Float.toString(ix));
+            image.setAttribute("y", Float.toString(iy));
+            image.setAttribute("width", Float.toString(iw));
+            image.setAttribute("height", Float.toString(ih));
             image.setAttributeNS(xlinkNS, "xlink:href", imgdata);
             getCurrentElem().appendChild(image);
             return true;
@@ -404,9 +403,9 @@ public class SVGDOMRenderer implements BoxRenderer
         if (lb.hasVisibleBullet())
         {
             VisualContext ctx = lb.getVisualContext();
-            int x = (int) Math.round(lb.getAbsoluteContentX() - 1.2 * ctx.getEm());
-            int y = (int) Math.round(lb.getAbsoluteContentY() + 0.5 * ctx.getEm());
-            int r = (int) Math.round(0.4 * ctx.getEm());
+            float x = (int) Math.round(lb.getAbsoluteContentX() - 1.2 * ctx.getEm());
+            float y = (int) Math.round(lb.getAbsoluteContentY() + 0.5 * ctx.getEm());
+            float r = (int) Math.round(0.4 * ctx.getEm());
 
             String tclr = colorString(ctx.getColor());
             String style = "";
@@ -418,9 +417,9 @@ public class SVGDOMRenderer implements BoxRenderer
                             + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
                     //out.println("<circle style=\"" + style + "\" cx=\"" + (x + r / 2) + "\" cy=\"" + (y + r / 2) + "\" r=\"" + (r / 2) + "\" />");
                     Element circle = createElement("circle");
-                    circle.setAttribute("cx", Integer.toString(x + r / 2));
-                    circle.setAttribute("cy", Integer.toString(y + r / 2));
-                    circle.setAttribute("r", Integer.toString(r / 2));
+                    circle.setAttribute("cx", Float.toString(x + r / 2));
+                    circle.setAttribute("cy", Float.toString(y + r / 2));
+                    circle.setAttribute("r", Float.toString(r / 2));
                     circle.setAttribute("style", style);
                     getCurrentElem().appendChild(circle);
                     break;
@@ -429,10 +428,10 @@ public class SVGDOMRenderer implements BoxRenderer
                             + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
                     //out.println("<rect style=\"" + style + "\" x=\"" + x + "\" y=\"" + y + "\" width=\"" + r + "\" height=\"" + r + "\" />");
                     Element rect = createElement("rect");
-                    rect.setAttribute("x", Integer.toString(x));
-                    rect.setAttribute("y", Integer.toString(y));
-                    rect.setAttribute("width", Integer.toString(r));
-                    rect.setAttribute("height", Integer.toString(r));
+                    rect.setAttribute("x", Float.toString(x));
+                    rect.setAttribute("y", Float.toString(y));
+                    rect.setAttribute("width", Float.toString(r));
+                    rect.setAttribute("height", Float.toString(r));
                     rect.setAttribute("style", style);
                     getCurrentElem().appendChild(rect);
                     break;
@@ -441,14 +440,14 @@ public class SVGDOMRenderer implements BoxRenderer
                             + ";stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1";
                     //out.println("<circle style=\"" + style + "\" cx=\"" + (x + r / 2) + "\" cy=\"" + (y + r / 2) + "\" r=\"" + (r / 2) + "\" />");
                     Element disc = createElement("circle");
-                    disc.setAttribute("cx", Integer.toString(x + r / 2));
-                    disc.setAttribute("cy", Integer.toString(y + r / 2));
-                    disc.setAttribute("r", Integer.toString(r / 2));
+                    disc.setAttribute("cx", Float.toString(x + r / 2));
+                    disc.setAttribute("cy", Float.toString(y + r / 2));
+                    disc.setAttribute("r", Float.toString(r / 2));
                     disc.setAttribute("style", style);
                     getCurrentElem().appendChild(disc);
                     break;
                 default:
-                    int baseline = lb.getFirstInlineBoxBaseline();
+                    float baseline = lb.getFirstInlineBoxBaseline();
                     if (baseline == -1) baseline = ctx.getBaselineOffset(); //use the font baseline
                     style = textStyle(ctx) + ";text-align:end;text-anchor:end";
                     addText(getCurrentElem(), (int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm()),
@@ -461,8 +460,8 @@ public class SVGDOMRenderer implements BoxRenderer
     private String textStyle(VisualContext ctx)
     {
         String style = "font-size:" + ctx.getFontSize() + "pt;" + "font-weight:"
-                + (ctx.getFont().isBold() ? "bold" : "normal") + ";" + "font-style:"
-                + (ctx.getFont().isItalic() ? "italic" : "normal") + ";" + "font-family:" + ctx.getFont().getFamily()
+                + (ctx.getFontInfo().isBold() ? "bold" : "normal") + ";" + "font-style:"
+                + (ctx.getFontInfo().isItalic() ? "italic" : "normal") + ";" + "font-family:" + ctx.getFontInfo().getFamily()
                 + ";" + "fill:" + colorString(ctx.getColor()) + ";" + "stroke:none";
         if (ctx.getLetterSpacing() > 0.0001)
             style += ";letter-spacing:" + ctx.getLetterSpacing() + "px";
@@ -480,39 +479,39 @@ public class SVGDOMRenderer implements BoxRenderer
             addTextByWords(getCurrentElem(), b.x, b.y + text.getBaselineOffset(), b.width, b.height, style, text);
     }
 
-    private void addText(Element parent, int x, int y, String style, String text)
+    private void addText(Element parent, float x, float y, String style, String text)
     {
         //out.print("<text x=\"" + x + "\" y=\"" + y + "\" style=\"" + style + "\">" + htmlEntities(text) + "</text>");
         Element txt = doc.createElementNS(svgNS, "text");
         txt.setAttributeNS(XMLConstants.XML_NS_URI, "space", "preserve");
-        txt.setAttribute("x", Integer.toString(x));
-        txt.setAttribute("y", Integer.toString(y));
+        txt.setAttribute("x", Float.toString(x));
+        txt.setAttribute("y", Float.toString(y));
         txt.setAttribute("style", style);
         txt.setTextContent(text);
         parent.appendChild(txt);
     }
 
-    private void addText(Element parent, int x, int y, int width, int height, String style, String text)
+    private void addText(Element parent, float x, float y, float width, float height, String style, String text)
     {
         //out.print("<text x=\"" + x + "\" y=\"" + y + "\" width=\"" + width + "\" height=\"" + height + "\" style=\"" + style + "\">" + htmlEntities(text) + "</text>");
         Element txt = doc.createElementNS(svgNS, "text");
         txt.setAttributeNS(XMLConstants.XML_NS_URI, "space", "preserve");
-        txt.setAttribute("x", Integer.toString(x));
-        txt.setAttribute("y", Integer.toString(y));
-        txt.setAttribute("width", Integer.toString(width));
-        txt.setAttribute("height", Integer.toString(height));
+        txt.setAttribute("x", Float.toString(x));
+        txt.setAttribute("y", Float.toString(y));
+        txt.setAttribute("width", Float.toString(width));
+        txt.setAttribute("height", Float.toString(height));
         txt.setAttribute("style", style);
         txt.setTextContent(text);
         parent.appendChild(txt);
     }
 
-    private void addTextByWords(Element parent, int x, int y, int width, int height, String style, TextBox text)
+    private void addTextByWords(Element parent, float x, float y, float width, float height, String style, TextBox text)
     {
         final String[] words = text.getText().split(" ");
         if (words.length > 0)
         {
             Element g = doc.createElementNS(svgNS, "g");
-            final int[][] offsets = text.getWordOffsets(words);
+            final float[][] offsets = text.getWordOffsets(words);
             for (int i = 0; i < words.length; i++)
                 addText(g, x + offsets[i][0], y, offsets[i][1], height, style, words[i]);
             parent.appendChild(g);
@@ -544,10 +543,10 @@ public class SVGDOMRenderer implements BoxRenderer
                     Rectangle cb = ((Box) box).getAbsoluteContentBounds();
 
                     Element image = doc.createElementNS(svgNS, "image");
-                    image.setAttribute("x", Integer.toString(cb.x));
-                    image.setAttribute("y", Integer.toString(cb.y));
-                    image.setAttribute("width", Integer.toString(cb.width));
-                    image.setAttribute("height", Integer.toString(cb.height));
+                    image.setAttribute("x", Float.toString(cb.x));
+                    image.setAttribute("y", Float.toString(cb.y));
+                    image.setAttribute("width", Float.toString(cb.width));
+                    image.setAttribute("height", Float.toString(cb.height));
                     image.setAttributeNS(xlinkNS, "xlink:href", imgdata);
                     getCurrentElem().appendChild(image);
                 }
@@ -577,7 +576,7 @@ public class SVGDOMRenderer implements BoxRenderer
 
     private String colorString(TermColor color)
     {
-        return colorString(CSSUnits.convertColor(color.getValue()));
+        return colorString(color.getValue());
     }
 
     private String colorString(Color color)
@@ -716,14 +715,14 @@ public class SVGDOMRenderer implements BoxRenderer
      */
     private boolean writeBorderCorner(Border border, int s)
     {
-        int rady, radx;
+        float rady, radx;
         CornerRadius cr = border.getRadius(s);
         radx = cr.x;
         rady = cr.y;
 
         TermColor startColor;
         TermColor stopColor;
-        int widthHor, widthVer;
+        float widthHor, widthVer;
 
         // podle toho, ktery roh je vykreslovan ziskame sirky ramecku a barvy v prislusnych smerech 
         if (s == 1)
@@ -787,7 +786,7 @@ public class SVGDOMRenderer implements BoxRenderer
      * @param width
      * @return {@code true} when something has been written
      */
-    private boolean writeBorderSVG(ElementBox eb, Point a, Point b, String side, int width)
+    private boolean writeBorderSVG(ElementBox eb, DPoint a, DPoint b, String side, float width)
     {
         TermColor tclr = eb.getStyle().getValue(TermColor.class, "border-" + side + "-color");
         CSSProperty.BorderStyle bst = eb.getStyle().getProperty("border-" + side + "-style");
@@ -799,14 +798,14 @@ public class SVGDOMRenderer implements BoxRenderer
             Color clr = null;
             if (tclr != null)
             {
-                clr = CSSUnits.convertColor(tclr.getValue());
+                clr = tclr.getValue();
             }
             if (clr == null)
             {
                 clr = eb.getVisualContext().getColor();
                 if (clr == null)
                 {
-                    clr = Color.BLACK;
+                    clr = new Color(0, 0, 0);
                 }
             }
             String coords = "";
@@ -844,24 +843,24 @@ public class SVGDOMRenderer implements BoxRenderer
         
         Rectangle bb = eb.getAbsoluteBorderBounds();
         // element sizes
-        int ix = bb.x + eb.getBorder().left;
-        int iy = bb.y + eb.getBorder().top;
-        int iw = bb.width - eb.getBorder().right - eb.getBorder().left;
-        int ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
+        float ix = bb.x + eb.getBorder().left;
+        float iy = bb.y + eb.getBorder().top;
+        float iw = bb.width - eb.getBorder().right - eb.getBorder().left;
+        float ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
 
         // stops
         RadialGradient grad = new RadialGradient(eb.getClippedContentBounds());
         for (TermFunction.Gradient.ColorStop stop : spec.getColorStops())
         {
-            Color color = CSSUnits.convertColor(stop.getColor().getValue());
+            Color color = stop.getColor().getValue();
             Float percentage = decodePercentage(eb, stop.getLength(), dec, iw); //TODO iw?
             grad.addStop(new GradientStop(color, percentage));
         }
         grad.recomputeStops();
 
         // position
-        int px = dec.getLength(spec.getPosition()[0], false, 0, 0, iw);
-        int py = dec.getLength(spec.getPosition()[1], false, 0, 0, ih);
+        float px = dec.getLength(spec.getPosition()[0], false, 0, 0, iw);
+        float py = dec.getLength(spec.getPosition()[1], false, 0, 0, ih);
         
         if ("circle".equals(spec.getShape().getValue()))
         {
@@ -927,7 +926,7 @@ public class SVGDOMRenderer implements BoxRenderer
         // additionally, a clip element is generated
         if (grad.isCircle())
         {
-            int max = Math.max(iw, ih);
+            float max = Math.max(iw, ih);
             double x = (max == iw ? ix : ix - ((max - iw) * grad.cx / 100));
             double y = (max == ih ? iy : iy - ((max - ih) * grad.cy / 100));
             Element e = createRect(x, y, max, max, style);
@@ -936,7 +935,7 @@ public class SVGDOMRenderer implements BoxRenderer
         }
         else
         {
-            //   int max = Math.max(iw, ih);
+            //   float max = Math.max(iw, ih);
             double x = (grad.newWidth == iw ? ix : ix - ((grad.newWidth - iw) * grad.cx / 100));
             double y = (grad.newHeight == ih ? iy : iy - ((grad.newHeight - ih) * grad.cy / 100));
 
@@ -952,10 +951,10 @@ public class SVGDOMRenderer implements BoxRenderer
         
         Rectangle bb = eb.getAbsoluteBorderBounds();
         // obtain the element size 
-        int ix = bb.x + eb.getBorder().left;
-        int iy = bb.y + eb.getBorder().top;
-        int iw = bb.width - eb.getBorder().right - eb.getBorder().left;
-        int ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
+        float ix = bb.x + eb.getBorder().left;
+        float iy = bb.y + eb.getBorder().top;
+        float iw = bb.width - eb.getBorder().right - eb.getBorder().left;
+        float ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
 
         // gradient angle and size
         LinearGradient grad = new LinearGradient();
@@ -972,7 +971,7 @@ public class SVGDOMRenderer implements BoxRenderer
         // stops
         for (TermFunction.Gradient.ColorStop stop : spec.getColorStops())
         {
-            Color color = CSSUnits.convertColor(stop.getColor().getValue());
+            Color color = stop.getColor().getValue();
             Float percentage = decodePercentage(eb, stop.getLength(), dec, Math.sqrt(iw*iw+ih*ih)); //TODO iw?
             grad.addStop(new GradientStop(color, percentage));
         }
@@ -1018,7 +1017,7 @@ public class SVGDOMRenderer implements BoxRenderer
             }
             else
             {
-                int abs = dec.getLength(spec, false, 0, 0, 0);
+                float abs = dec.getLength(spec, false, 0, 0, 0);
                 return (float) ((abs / wholeLength) * 100.0);
             }
         }
@@ -1048,12 +1047,12 @@ public class SVGDOMRenderer implements BoxRenderer
             return null;
     }
     
-    public Element createPath(String dPath, String fill, String stroke, int strokeWidth)
+    public Element createPath(String dPath, String fill, String stroke, float strokeWidth)
     {
         Element e = createElement("path");
         e.setAttribute("d", dPath);
         e.setAttribute("stroke", stroke);
-        e.setAttribute("stroke-width", Integer.toString(strokeWidth));
+        e.setAttribute("stroke-width", Float.toString(strokeWidth));
         e.setAttribute("fill", fill);
         return e;
     }
@@ -1069,25 +1068,25 @@ public class SVGDOMRenderer implements BoxRenderer
         return e;
     }
 
-    public Element createRect(int x, int y, int width, int height, String style)
+    public Element createRect(float x, float y, float width, float height, String style)
     {
         Element e = createElement("rect");
-        e.setAttribute("x", Integer.toString(x));
-        e.setAttribute("y", Integer.toString(y));
-        e.setAttribute("width", Integer.toString(width));
-        e.setAttribute("height", Integer.toString(height));
+        e.setAttribute("x", Float.toString(x));
+        e.setAttribute("y", Float.toString(y));
+        e.setAttribute("width", Float.toString(width));
+        e.setAttribute("height", Float.toString(height));
         e.setAttribute("style", style);
         return e;
     }
 
-    public Element createImage(int x, int y, int width, int height, String imgData)
+    public Element createImage(float x, float y, float width, float height, String imgData)
     {
         Element image = createElement("image");
         //text.setAttribute("id", );
-        image.setAttribute("x", Integer.toString(x));
-        image.setAttribute("y", Integer.toString(y));
-        image.setAttribute("width", Integer.toString(width));
-        image.setAttribute("height", Integer.toString(height));
+        image.setAttribute("x", Float.toString(x));
+        image.setAttribute("y", Float.toString(y));
+        image.setAttribute("width", Float.toString(width));
+        image.setAttribute("height", Float.toString(height));
         image.setAttributeNS(xlinkNS, "xlink:href", imgData);
         return image;
     }

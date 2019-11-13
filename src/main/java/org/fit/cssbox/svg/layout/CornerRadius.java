@@ -1,8 +1,7 @@
 
 package org.fit.cssbox.svg.layout;
 
-import java.awt.Point;
-import java.awt.Rectangle;
+import org.fit.cssbox.layout.Rectangle;
 
 /**
  * A single border corner representaton
@@ -13,20 +12,20 @@ import java.awt.Rectangle;
 public class CornerRadius
 {
     // zaobleni ve smeru osy x a osy y
-    public int x;
-    public int y;
+    public float x;
+    public float y;
 
     // jednotlive body
-    public Point a;
-    public Point b;
-    public Point c;
-    public Point d;
-    public Point e;
-    public Point o;
+    public DPoint a;
+    public DPoint b;
+    public DPoint c;
+    public DPoint d;
+    public DPoint e;
+    public DPoint o;
     public DPoint g;
     public DPoint h;
 
-    public Point q;
+    public DPoint q;
 
     // smernice a vysek na ose y pro hranicni primku
     public double z;
@@ -46,16 +45,16 @@ public class CornerRadius
      * @param rady
      * @param ss
      */
-    public CornerRadius(int radx, int rady, int ss)
+    public CornerRadius(float radx, float rady, int ss)
     {
-        this.o = new Point();
-        this.e = new Point();
-        this.d = new Point();
+        this.o = new DPoint();
+        this.e = new DPoint();
+        this.d = new DPoint();
         this.g = new DPoint();
         this.h = new DPoint();
-        this.a = new Point();
-        this.b = new Point();
-        this.c = new Point();
+        this.a = new DPoint();
+        this.b = new DPoint();
+        this.c = new DPoint();
         q = null;
         x = radx;
         y = rady;
@@ -72,7 +71,7 @@ public class CornerRadius
      * @param widthHor
      * @return
      */
-    public String getPathRadiusC(int widthVer, int widthHor)
+    public String getPathRadiusC(float widthVer, float widthHor)
     {
         String path1 = "";
         path1 += "M " + d.x + " " + d.y + " ";
@@ -112,7 +111,7 @@ public class CornerRadius
      * @param widthHor
      * @return
      */
-    public String getPathRadiusA(int widthVer, int widthHor)
+    public String getPathRadiusA(float widthVer, float widthHor)
     {
         String path2 = "";
 

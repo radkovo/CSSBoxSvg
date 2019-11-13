@@ -1,9 +1,10 @@
 
 package org.fit.cssbox.svg.layout;
 
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import org.fit.cssbox.layout.Rectangle;
 
 /**
  * A radial gradient representation
@@ -16,7 +17,7 @@ public class RadialGradient extends Gradient
     // prepinac urcujici, zda se jedna o kruznici nebo elipsu
     private boolean circle;
 
-    public int rxy;
+    public float rxy;
 
     public double xAxis;
     public double yAxis;
@@ -24,10 +25,10 @@ public class RadialGradient extends Gradient
     public double yAxisPerc;
 
     // stred gradientu
-    public int sx;
-    public int sy;
-    public int sxPerc;
-    public int syPerc;
+    public float sx;
+    public float sy;
+    public float sxPerc;
+    public float syPerc;
 
     // hodnoty potrebne pro SVG element
     public double cx;
@@ -79,7 +80,7 @@ public class RadialGradient extends Gradient
      * @param sx
      * @param sy
      */
-    public void setEllipseData(double rx, double ry, int sx, int sy)
+    public void setEllipseData(double rx, double ry, float sx, float sy)
     {
         circle = false;
 
@@ -114,7 +115,7 @@ public class RadialGradient extends Gradient
      * @param sxp
      * @param syp
      */
-    public void setEllipseDataPercent(double rxp, double ryp, int sxp, int syp)
+    public void setEllipseDataPercent(double rxp, double ryp, float sxp, float syp)
     {
         setEllipseData(rxp * rect.width / 100, ryp * rect.height / 100, sxp * rect.width / 100,
                 syp * rect.height / 100);
@@ -130,7 +131,7 @@ public class RadialGradient extends Gradient
      * @param sx
      * @param sy
      */
-    public void setEllipseDataRadLengths(RadLengths rl, int sx, int sy)
+    public void setEllipseDataRadLengths(RadLengths rl, float sx, float sy)
     {
         double rx = 0;
         double ry = 0;
@@ -139,7 +140,7 @@ public class RadialGradient extends Gradient
         double distRight;
         double distBot;
         double ratio;
-        int xx, yy;
+        float xx, yy;
         double pom;
         int i;
 
@@ -224,13 +225,13 @@ public class RadialGradient extends Gradient
         setEllipseData(rx, ry, sx, sy);
     }
 
-    private int getIndexOfMinCornerDistance(int sx, int sy)
+    private int getIndexOfMinCornerDistance(float sx, float sy)
     {
         ArrayList<Double> l = getAllCornersDistance(sx, sy);
         return l.indexOf(Collections.min(l));
     }
 
-    private int getIndexOfMaxCornerDistance(int sx, int sy)
+    private int getIndexOfMaxCornerDistance(float sx, float sy)
     {
         ArrayList<Double> l = getAllCornersDistance(sx, sy);
         return l.indexOf(Collections.max(l));
@@ -245,7 +246,7 @@ public class RadialGradient extends Gradient
      * @param sx
      * @param sy
      */
-    public void setCircleData(double rxy, int sx, int sy)
+    public void setCircleData(double rxy, float sx, float sy)
     {
         circle = true;
 
@@ -266,7 +267,7 @@ public class RadialGradient extends Gradient
      * @param sxp
      * @param syp
      */
-    public void setCircleDataPercent(double rxy, int sxp, int syp)
+    public void setCircleDataPercent(double rxy, float sxp, float syp)
     {
         setCircleData(rxy, sxp * rect.width / 100, syp * rect.height / 100);
     }
@@ -278,7 +279,7 @@ public class RadialGradient extends Gradient
      * @param sx
      * @param sy
      */
-    public void setCircleDataRadLengths(RadLengths rl, int sx, int sy)
+    public void setCircleDataRadLengths(RadLengths rl, float sx, float sy)
     {
         double rxy = 0;
         ArrayList<Double> l;
@@ -304,12 +305,12 @@ public class RadialGradient extends Gradient
         setCircleData(rxy, sx, sy);
     }
 
-    public void setCircleDataPercentRadLengths(RadLengths rl, int sxp, int syp)
+    public void setCircleDataPercentRadLengths(RadLengths rl, float sxp, float syp)
     {
         setCircleDataRadLengths(rl, sxp * rect.width / 100, syp * rect.height / 100);
     }
 
-    private ArrayList<Double> getAllCornersDistance(int centerX, int centerY)
+    private ArrayList<Double> getAllCornersDistance(float centerX, float centerY)
     {
         ArrayList<Double> l = new ArrayList<Double>();
 
@@ -321,7 +322,7 @@ public class RadialGradient extends Gradient
         return l;
     }
 
-    private ArrayList<Double> getAllSidesDistance(int centerX, int centerY)
+    private ArrayList<Double> getAllSidesDistance(float centerX, float centerY)
     {
         ArrayList<Double> l = new ArrayList<Double>();
 

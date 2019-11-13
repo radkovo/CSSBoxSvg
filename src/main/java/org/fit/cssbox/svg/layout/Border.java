@@ -12,14 +12,12 @@ import cz.vutbr.web.css.TermColor;
 import cz.vutbr.web.css.TermLengthOrPercent;
 import cz.vutbr.web.css.TermList;
 
-import java.awt.Point;
-import java.awt.Rectangle;
-import static java.lang.Integer.max;
 import java.util.ArrayList;
 
 import org.fit.cssbox.layout.CSSDecoder;
 import org.fit.cssbox.layout.ElementBox;
 import org.fit.cssbox.layout.LengthSet;
+import org.fit.cssbox.layout.Rectangle;
 
 /**
  * Trida pro implementaci renderovani zaoblenych ramecku v SVG.
@@ -36,14 +34,14 @@ public class Border
     public Rectangle borderBounds;
 
     // krajni body, od kterych zacina zaobleni rohu
-    public Point topRightH = new Point();
-    public Point topRightV = new Point();
-    public Point topLeftH = new Point();
-    public Point topLeftV = new Point();
-    public Point bottomRightH = new Point();
-    public Point bottomRightV = new Point();
-    public Point bottomLeftH = new Point();
-    public Point bottomLeftV = new Point();
+    public DPoint topRightH = new DPoint();
+    public DPoint topRightV = new DPoint();
+    public DPoint topLeftH = new DPoint();
+    public DPoint topLeftV = new DPoint();
+    public DPoint bottomRightH = new DPoint();
+    public DPoint bottomRightV = new DPoint();
+    public DPoint bottomLeftH = new DPoint();
+    public DPoint bottomLeftV = new DPoint();
 
     // pro kazdy roh trida, ktera uklada jendotlive body potrebne k vykresleni ramecku do SVG
     public CornerRadius topLeft;
@@ -69,14 +67,14 @@ public class Border
     {
         border = lengths;
         borderBounds = bb;
-        topRightH = new Point();
-        topRightV = new Point();
-        topLeftH = new Point();
-        topLeftV = new Point();
-        bottomRightH = new Point();
-        bottomRightV = new Point();
-        bottomLeftH = new Point();
-        bottomLeftV = new Point();
+        topRightH = new DPoint();
+        topRightV = new DPoint();
+        topLeftH = new DPoint();
+        topLeftV = new DPoint();
+        bottomRightH = new DPoint();
+        bottomRightV = new DPoint();
+        bottomLeftH = new DPoint();
+        bottomLeftV = new DPoint();
 
         // vygenerovani tridy pro reprezentaci rohu ramecku pro kazdy roh
         final CSSDecoder dec = new CSSDecoder(eb.getVisualContext());
@@ -136,7 +134,7 @@ public class Border
         if (r == CSSProperty.BorderRadius.list_values)
             vals = style.getValue(TermList.class, propertyName);
         
-        int radx, rady;
+        float radx, rady;
         if (vals != null && vals.size() == 2)
         {
             radx = dec.getLength((TermLengthOrPercent) vals.get(0), false, 0, 0, borderBounds.width);
@@ -183,29 +181,29 @@ public class Border
     public void calculateBorderPoints()
     {
 
-        topLeftH.x = borderBounds.x + max(topLeft.x, border.left);//topLeft.x;
+        topLeftH.x = borderBounds.x + Math.max(topLeft.x, border.left);//topLeft.x;
         topLeftH.y = borderBounds.y;
 
-        topRightH.x = borderBounds.x + borderBounds.width - max(topRight.x, border.right);//topRight.x;
+        topRightH.x = borderBounds.x + borderBounds.width - Math.max(topRight.x, border.right);//topRight.x;
         topRightH.y = borderBounds.y;
 
         topRightV.x = borderBounds.x + borderBounds.width;
-        topRightV.y = borderBounds.y + max(topRight.y, border.top);
+        topRightV.y = borderBounds.y + Math.max(topRight.y, border.top);
 
         bottomRightV.x = borderBounds.x + borderBounds.width;
-        bottomRightV.y = borderBounds.y + borderBounds.height - max(bottomRight.y, border.bottom);
+        bottomRightV.y = borderBounds.y + borderBounds.height - Math.max(bottomRight.y, border.bottom);
 
-        bottomRightH.x = borderBounds.x + borderBounds.width - max(bottomRight.x, border.right);
+        bottomRightH.x = borderBounds.x + borderBounds.width - Math.max(bottomRight.x, border.right);
         bottomRightH.y = borderBounds.y + borderBounds.height;
 
-        bottomLeftH.x = borderBounds.x + max(bottomLeft.x, border.left);
+        bottomLeftH.x = borderBounds.x + Math.max(bottomLeft.x, border.left);
         bottomLeftH.y = borderBounds.y + borderBounds.height;
 
         bottomLeftV.x = borderBounds.x;
-        bottomLeftV.y = borderBounds.y + borderBounds.height - max(bottomLeft.y, border.bottom);
+        bottomLeftV.y = borderBounds.y + borderBounds.height - Math.max(bottomLeft.y, border.bottom);
 
         topLeftV.x = borderBounds.x;
-        topLeftV.y = borderBounds.y + max(topLeft.y, border.top);
+        topLeftV.y = borderBounds.y + Math.max(topLeft.y, border.top);
     }
 
     /**
@@ -213,8 +211,8 @@ public class Border
      */
     public void calculateRadiusPoints()
     {
-        int widthHor, widthVer;
-        int radx, rady;
+        float widthHor, widthVer;
+        float radx, rady;
 
         ////////////////////////////////
         // TOP RIGHT
@@ -235,14 +233,14 @@ public class Border
         topRight.a.x = topRight.o.x - radx;
         topRight.a.y = topRight.o.y;
 
-        topRight.b.x = topRight.o.x - max(widthHor, radx);
+        topRight.b.x = topRight.o.x - Math.max(widthHor, radx);
         topRight.b.y = topRight.o.y + widthVer;
 
         topRight.c.x = topRight.o.x;
         topRight.c.y = topRight.o.y + rady;
 
         topRight.d.x = topRight.o.x - widthHor;
-        topRight.d.y = topRight.o.y + max(widthVer, rady);
+        topRight.d.y = topRight.o.y + Math.max(widthVer, rady);
 
         // zde je vypocet smernicoveho tvaru primky, ktera tvori hranici mezi dvema stranami ramecku
         topRight.k = Math.tan((widthVer / (2.0 * (widthVer + widthHor))) * Math.PI);
@@ -254,7 +252,7 @@ public class Border
         topRight.bounds = new Rectangle(topRight.o.x - radx, topRight.o.y, radx, rady);
         if (widthVer > rady || widthHor > radx)
         {
-            topRight.q = new Point();
+            topRight.q = new DPoint();
             topRight.q.x = topRight.d.x;
             topRight.q.y = topRight.b.y;
         }
@@ -281,12 +279,12 @@ public class Border
         topLeft.a.y = topLeft.o.y + rady;
 
         topLeft.b.x = topLeft.o.x + widthHor;
-        topLeft.b.y = topLeft.o.y + max(widthVer, rady);
+        topLeft.b.y = topLeft.o.y + Math.max(widthVer, rady);
 
         topLeft.c.x = topLeft.o.x + radx;
         topLeft.c.y = topLeft.o.y;
 
-        topLeft.d.x = topLeft.o.x + max(widthHor, radx);
+        topLeft.d.x = topLeft.o.x + Math.max(widthHor, radx);
         topLeft.d.y = topLeft.o.y + widthVer;
 
         topLeft.k = -Math.tan(((widthVer) / (2.0 * (widthHor + widthVer))) * Math.PI);
@@ -295,7 +293,7 @@ public class Border
         topLeft.bounds = new Rectangle(topLeft.o.x, topLeft.o.y, radx, rady);
         if (widthVer > rady || widthHor > radx)
         {
-            topLeft.q = new Point();
+            topLeft.q = new DPoint();
             topLeft.q.x = topLeft.b.x;
             topLeft.q.y = topLeft.d.y;
         }
@@ -319,12 +317,12 @@ public class Border
         bottomRight.a.y = bottomRight.o.y - rady;
 
         bottomRight.b.x = bottomRight.o.x - widthHor;
-        bottomRight.b.y = bottomRight.o.y - max(widthVer, rady);
+        bottomRight.b.y = bottomRight.o.y - Math.max(widthVer, rady);
 
         bottomRight.c.x = bottomRight.o.x - radx;
         bottomRight.c.y = bottomRight.o.y;
 
-        bottomRight.d.x = bottomRight.o.x - max(widthHor, radx);
+        bottomRight.d.x = bottomRight.o.x - Math.max(widthHor, radx);
         bottomRight.d.y = bottomRight.o.y - widthVer;
 
         double mid = (widthVer) / (2.0 * (widthHor + widthVer));
@@ -335,7 +333,7 @@ public class Border
         bottomRight.bounds = new Rectangle(bottomRight.o.x - radx, bottomRight.o.y - rady, radx, rady);
         if (widthVer > rady || widthHor > radx)
         {
-            bottomRight.q = new Point();
+            bottomRight.q = new DPoint();
             bottomRight.q.x = bottomRight.b.x;
             bottomRight.q.y = bottomRight.d.y;
         }
@@ -359,14 +357,14 @@ public class Border
         bottomLeft.a.x = bottomLeft.o.x + radx;
         bottomLeft.a.y = bottomLeft.o.y;
 
-        bottomLeft.b.x = bottomLeft.o.x + max(widthHor, radx);
+        bottomLeft.b.x = bottomLeft.o.x + Math.max(widthHor, radx);
         bottomLeft.b.y = bottomLeft.o.y - widthVer;
 
         bottomLeft.c.x = bottomLeft.o.x;
         bottomLeft.c.y = bottomLeft.o.y - rady;
 
         bottomLeft.d.x = bottomLeft.o.x + widthHor;
-        bottomLeft.d.y = bottomLeft.o.y - max(widthVer, rady);
+        bottomLeft.d.y = bottomLeft.o.y - Math.max(widthVer, rady);
 
         bottomLeft.k = Math.tan(((widthVer) / (2.0 * (widthHor + widthVer))) * Math.PI);
         bottomLeft.z = (bottomLeft.o.y + bottomLeft.k * bottomLeft.o.x);
@@ -374,7 +372,7 @@ public class Border
         bottomLeft.bounds = new Rectangle(bottomLeft.o.x, bottomLeft.o.y - rady, radx, rady);
         if (widthVer > rady || widthHor > radx)
         {
-            bottomLeft.q = new Point();
+            bottomLeft.q = new DPoint();
             bottomLeft.q.x = bottomLeft.d.x;
             bottomLeft.q.y = bottomLeft.b.y;
         }
@@ -391,7 +389,7 @@ public class Border
      * @param widthVer
      * @param s
      */
-    public void calculateMiddlePoints(CornerRadius cr, int radx, int rady, int widthHor, int widthVer, int s)
+    public void calculateMiddlePoints(CornerRadius cr, float radx, float rady, float widthHor, float widthVer, int s)
     {
         // pokud je ramecek nastaven na 0px
         // ramecek je vykreslen bez zaobleni a body G a H jsou dopocitavany pouze podle sirky ramecku
@@ -480,7 +478,7 @@ public class Border
      * @param c
      * @return
      */
-    private ArrayList<Double> ellipseLineIntersect(int x0, int y0, int a, int b, double k, double c)
+    private ArrayList<Double> ellipseLineIntersect(float x0, float y0, float a, float b, double k, double c)
     {
         double delta = c + k * x0;
         double eps = c - y0;
@@ -516,17 +514,17 @@ public class Border
      * @param bounds
      * @return
      */
-    public DPoint getIntersectPoint(Point center, int sizex, int sizey, double slope, double yIntercept,
+    public DPoint getIntersectPoint(DPoint center, float sizex, float sizey, double slope, double yIntercept,
             Rectangle bounds)
     {
         ArrayList<Double> arl = ellipseLineIntersect(center.x, center.y, sizex, sizey, slope, yIntercept);
         DPoint p = new DPoint();
-        p.x = arl.get(0);
-        p.y = arl.get(1);
+        p.x = arl.get(0).floatValue();
+        p.y = arl.get(1).floatValue();
         if (!isInBounds(bounds, p))
         {
-            p.x = arl.get(2);
-            p.y = arl.get(3);
+            p.x = arl.get(2).floatValue();
+            p.y = arl.get(3).floatValue();
         }
         return p;
     }
@@ -536,12 +534,12 @@ public class Border
         return isInBounds(r.x, r.y, r.x + r.width, r.y + r.height, p.x, p.y);
     }
 
-    public boolean isInBounds(int x1, int y1, int x2, int y2, int px, int py)
+    public boolean isInBounds(float x1, float y1, float x2, float y2, float px, float py)
     {
         return px > x1 && px < x2 && py < y2 && py > y1;
     }
 
-    public boolean isInBounds(int x1, int y1, int x2, int y2, double px, double py)
+    public boolean isInBounds(float x1, float y1, float x2, float y2, double px, double py)
     {
         return px > x1 && px < x2 && py < y2 && py > y1;
     }

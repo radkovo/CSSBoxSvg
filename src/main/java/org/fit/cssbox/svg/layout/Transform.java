@@ -9,9 +9,9 @@ import cz.vutbr.web.css.TermInteger;
 import cz.vutbr.web.css.TermLengthOrPercent;
 import cz.vutbr.web.css.TermList;
 import cz.vutbr.web.css.TermNumber;
-import java.awt.Rectangle;
 import org.fit.cssbox.layout.CSSDecoder;
 import org.fit.cssbox.layout.ElementBox;
+import org.fit.cssbox.layout.Rectangle;
 
 /**
  * trida pro generovani SVG 2D transformaci
@@ -44,7 +44,7 @@ public class Transform
             bounds = elem.getAbsoluteBorderBounds();
 
             //decode the origin
-            int ox, oy;
+            float ox, oy;
             CSSProperty.TransformOrigin origin = elem.getStyle().getProperty("transform-origin");
             if (origin == CSSProperty.TransformOrigin.list_values)
             {
@@ -236,7 +236,7 @@ public class Transform
     {
         if (func.size() == 1 && func.get(0) instanceof TermLengthOrPercent)
         {
-            int tx = dec.getLength((TermLengthOrPercent) func.get(0), false, 0, 0, bounds.width);
+            final float tx = dec.getLength((TermLengthOrPercent) func.get(0), false, 0, 0, bounds.width);
             return "translate( " + tx + " ) ";
         }
         return "";
@@ -246,7 +246,7 @@ public class Transform
     {
         if (func.size() == 1 && func.get(0) instanceof TermLengthOrPercent)
         {
-            int ty = dec.getLength((TermLengthOrPercent) func.get(0), false, 0, 0, bounds.height);
+            final float ty = dec.getLength((TermLengthOrPercent) func.get(0), false, 0, 0, bounds.height);
             return "translate( 0 " + ty + " ) ";
         }
         return "";
@@ -256,15 +256,15 @@ public class Transform
     {
         if (func.size() == 1 && func.get(0) instanceof TermLengthOrPercent)
         {
-            int tx = dec.getLength((TermLengthOrPercent) func.get(0), false, 0, 0, bounds.width);
-            int ty = 0;
+            final float tx = dec.getLength((TermLengthOrPercent) func.get(0), false, 0, 0, bounds.width);
+            final float ty = 0;
             return "translate( " + tx + " " + ty + " ) ";
         }
         else if (func.size() == 2 && func.get(0) instanceof TermLengthOrPercent
                 && func.get(1) instanceof TermLengthOrPercent)
         {
-            int tx = dec.getLength((TermLengthOrPercent) func.get(0), false, 0, 0, bounds.width);
-            int ty = dec.getLength((TermLengthOrPercent) func.get(1), false, 0, 0, bounds.height);
+            final float tx = dec.getLength((TermLengthOrPercent) func.get(0), false, 0, 0, bounds.width);
+            final float ty = dec.getLength((TermLengthOrPercent) func.get(1), false, 0, 0, bounds.height);
             return "translate( " + tx + " " + ty + " ) ";
         }
         return "";

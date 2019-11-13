@@ -19,7 +19,6 @@
 
 package org.fit.cssbox.svg.demo;
 
-import java.awt.Dimension;
 import java.awt.Font;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,8 +32,9 @@ import org.fit.cssbox.io.DOMSource;
 import org.fit.cssbox.io.DefaultDOMSource;
 import org.fit.cssbox.io.DefaultDocumentSource;
 import org.fit.cssbox.io.DocumentSource;
-import org.fit.cssbox.layout.BrowserCanvas;
 import org.fit.cssbox.layout.BrowserConfig;
+import org.fit.cssbox.layout.Dimension;
+import org.fit.cssbox.layout.GraphicsEngine;
 import org.fit.cssbox.layout.Viewport;
 import org.fit.cssbox.svg.render.SVGDOMRenderer;
 import org.w3c.dom.Document;
@@ -129,7 +129,7 @@ public class ImageRenderer
         da.addStyleSheet(null, CSSNorm.formsStyleSheet(), DOMAnalyzer.Origin.AGENT); //render form fields using css
         da.getStyleSheets(); //load the author style sheets
 
-        BrowserCanvas contentCanvas = new BrowserCanvas(da.getRoot(), da, docSource.getURL());
+        GraphicsEngine contentCanvas = new GraphicsEngine(da.getRoot(), da, docSource.getURL());
         contentCanvas.setAutoMediaUpdate(false); //we have a correct media specification, do not update
         contentCanvas.getConfig().setClipViewport(cropWindow);
         contentCanvas.getConfig().setLoadImages(loadImages);
@@ -168,8 +168,8 @@ public class ImageRenderer
     {
 
         //obtain the viewport bounds depending on whether we are clipping to viewport size or using the whole page
-        int w = vp.getClippedContentBounds().width;
-        int h = vp.getClippedContentBounds().height;
+        float w = vp.getClippedContentBounds().width;
+        float h = vp.getClippedContentBounds().height;
 
         SVGDOMRenderer render = new SVGDOMRenderer(w, h, out);
         vp.draw(render);

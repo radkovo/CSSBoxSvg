@@ -9,7 +9,7 @@ package org.fit.cssbox.svg.layout;
 public class DPoint
 {
 
-    public double x;
-    public double y;
+    public float x;
+    public float y;
 
 }

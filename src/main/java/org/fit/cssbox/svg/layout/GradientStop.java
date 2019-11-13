@@ -1,7 +1,7 @@
 
 package org.fit.cssbox.svg.layout;
 
-import java.awt.Color;
+import cz.vutbr.web.csskit.Color;
 
 /**
  * A single color stop representation.
