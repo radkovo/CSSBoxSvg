@@ -19,7 +19,6 @@
 
 package org.fit.cssbox.svg.demo;
 
-import java.awt.Font;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,6 +41,7 @@ import org.xml.sax.SAXException;
 
 import cz.vutbr.web.css.MediaSpec;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -135,8 +135,8 @@ public class ImageRenderer
         engine.getConfig().setClipViewport(cropWindow);
         engine.getConfig().setLoadImages(loadImages);
         engine.getConfig().setLoadBackgroundImages(loadBackgroundImages);
-
-        setDefaultFonts(engine.getConfig());
+        defineLogicalFonts(engine.getConfig());
+        
         engine.createLayout(windowSize);
 
         Writer w = new OutputStreamWriter(out, "utf-8");
@@ -151,11 +151,11 @@ public class ImageRenderer
     /**
      * Sets some common fonts as the defaults for generic font families.
      */
-    protected void setDefaultFonts(BrowserConfig config)
+    protected void defineLogicalFonts(BrowserConfig config)
     {
-        config.setDefaultFont(Font.SERIF, "Times New Roman");
-        config.setDefaultFont(Font.SANS_SERIF, "Arial");
-        config.setDefaultFont(Font.MONOSPACED, "Courier New");
+        config.setLogicalFont(BrowserConfig.SERIF, Arrays.asList("Times", "Times New Roman"));
+        config.setLogicalFont(BrowserConfig.SANS_SERIF, Arrays.asList("Arial", "Helvetica"));
+        config.setLogicalFont(BrowserConfig.MONOSPACE, Arrays.asList("Courier New", "Courier"));
     }
 
     /**
