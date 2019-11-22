@@ -67,6 +67,8 @@ import org.fit.cssbox.layout.TextBox;
  */
 public class SVGDOMRenderer implements BoxRenderer
 {
+    private static final float MIN = 0.0001f; //minimal coordinate difference to take into account
+    
     private PrintWriter out;
 
     private float rootw;
@@ -365,7 +367,7 @@ public class SVGDOMRenderer implements BoxRenderer
         VisualContext ctx = lb.getVisualContext();
         float ofs = lb.getFirstInlineBoxBaseline();
         if (ofs == -1) ofs = ctx.getBaselineOffset(); //use the font baseline
-        float x = Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm());
+        float x = lb.getAbsoluteContentX() - 0.5f * ctx.getEm();
         float y = lb.getAbsoluteContentY() + ofs;
         BufferedImage img = lb.getMarkerImage().getBufferedImage();
         if (img != null)
@@ -403,9 +405,9 @@ public class SVGDOMRenderer implements BoxRenderer
         if (lb.hasVisibleBullet())
         {
             VisualContext ctx = lb.getVisualContext();
-            float x = (int) Math.round(lb.getAbsoluteContentX() - 1.2 * ctx.getEm());
-            float y = (int) Math.round(lb.getAbsoluteContentY() + 0.5 * ctx.getEm());
-            float r = (int) Math.round(0.4 * ctx.getEm());
+            float x = lb.getAbsoluteContentX() - 1.2f * ctx.getEm();
+            float y = lb.getAbsoluteContentY() + 0.5f * ctx.getEm();
+            float r = 0.4f * ctx.getEm();
 
             String tclr = colorString(ctx.getColor());
             String style = "";
@@ -450,7 +452,7 @@ public class SVGDOMRenderer implements BoxRenderer
                     float baseline = lb.getFirstInlineBoxBaseline();
                     if (baseline == -1) baseline = ctx.getBaselineOffset(); //use the font baseline
                     style = textStyle(ctx) + ";text-align:end;text-anchor:end";
-                    addText(getCurrentElem(), (int) Math.round(lb.getAbsoluteContentX() - 0.5 * ctx.getEm()),
+                    addText(getCurrentElem(), lb.getAbsoluteContentX() - 0.5f * ctx.getEm(),
                             lb.getAbsoluteContentY() + baseline, style, lb.getMarkerText());
                     break;
             }
@@ -634,7 +636,7 @@ public class SVGDOMRenderer implements BoxRenderer
         if (crTopRight.isDrawn)
         {
             path += " A " + (crTopRight.x - border.border.right) + " " + (crTopRight.y - border.border.top) + " 0 0 1 "
-                    + Math.round(crTopRight.d.x) + " " + Math.round(crTopRight.d.y);
+                    + crTopRight.d.x + " " + crTopRight.d.y;
         }
         else
         {
@@ -648,7 +650,7 @@ public class SVGDOMRenderer implements BoxRenderer
         if (crBottomRight.isDrawn)
         {
             path += " A " + (crBottomRight.x - border.border.right) + " " + (crBottomRight.y - border.border.bottom)
-                    + " 0 0 1 " + Math.round(crBottomRight.d.x) + " " + Math.round(crBottomRight.d.y);
+                    + " 0 0 1 " + crBottomRight.d.x + " " + crBottomRight.d.y;
         }
         else
         {
@@ -659,7 +661,7 @@ public class SVGDOMRenderer implements BoxRenderer
         if (crBottomLeft.isDrawn)
         {
             path += " A " + (crBottomLeft.x - border.border.left) + " " + (crBottomLeft.y - border.border.bottom)
-                    + " 0 0 1 " + Math.round(crBottomLeft.d.x) + " " + Math.round(crBottomLeft.d.y);
+                    + " 0 0 1 " + crBottomLeft.d.x + " " + crBottomLeft.d.y;
         }
         else
         {
@@ -671,7 +673,7 @@ public class SVGDOMRenderer implements BoxRenderer
         if (crTopLeft.isDrawn)
         {
             path += " A " + (crTopLeft.x - border.border.left) + " " + (crTopLeft.y - border.border.top) + " 0 0 1 "
-                    + Math.round(crTopLeft.d.x) + " " + Math.round(crTopLeft.d.y);
+                    + crTopLeft.d.x + " " + crTopLeft.d.y;
         }
         else
         {
@@ -715,63 +717,66 @@ public class SVGDOMRenderer implements BoxRenderer
      */
     private boolean writeBorderCorner(Border border, int s)
     {
-        float rady, radx;
-        CornerRadius cr = border.getRadius(s);
-        radx = cr.x;
-        rady = cr.y;
-
-        TermColor startColor;
-        TermColor stopColor;
-        float widthHor, widthVer;
-
-        // podle toho, ktery roh je vykreslovan ziskame sirky ramecku a barvy v prislusnych smerech 
-        if (s == 1)
-        { // top-right
-            widthHor = border.border.right;
-            widthVer = border.border.top;
-            startColor = border.colorRight;
-            stopColor = border.colorTop;
-        }
-        else if (s == 2)
-        { // topleft
-            widthHor = border.border.left;
-            widthVer = border.border.top;
-            startColor = border.colorTop;
-            stopColor = border.colorLeft;
-        }
-        else if (s == 3)
-        { // bottomright
-            widthHor = border.border.right;
-            widthVer = border.border.bottom;
-            startColor = border.colorBottom;
-            stopColor = border.colorRight;
-        }
-        else
-        { // bottomleft
-            widthHor = border.border.left;
-            widthVer = border.border.bottom;
-            startColor = border.colorLeft;
-            stopColor = border.colorBottom;
-        }
-        
-        if (startColor != null && stopColor != null)
+        final CornerRadius cr = border.getRadius(s);
+        final float radx = cr.x;
+        final float rady = cr.y;
+        if (radx > MIN || rady > MIN)
         {
-            final String cString1 = colorString(startColor);
-            final String cString2 = colorString(stopColor);
+            TermColor startColor;
+            TermColor stopColor;
+            float widthHor, widthVer;
     
-            String path1 = cr.getPathRadiusC(widthVer, widthHor);
-            String path2 = cr.getPathRadiusA(widthVer, widthHor);
-    
-            if (widthVer > rady || widthHor > radx)
-            {
-                cr.isDrawn = false;
+            // podle toho, ktery roh je vykreslovan ziskame sirky ramecku a barvy v prislusnych smerech 
+            if (s == 1)
+            { // top-right
+                widthHor = border.border.right;
+                widthVer = border.border.top;
+                startColor = border.colorRight;
+                stopColor = border.colorTop;
             }
-    
-            Element q = createPath(path1, cString1, "none", 1);
-            getCurrentElem().appendChild(q);
-            q = createPath(path2, cString2, "none", 1);
-            getCurrentElem().appendChild(q);
-            return true;
+            else if (s == 2)
+            { // topleft
+                widthHor = border.border.left;
+                widthVer = border.border.top;
+                startColor = border.colorTop;
+                stopColor = border.colorLeft;
+            }
+            else if (s == 3)
+            { // bottomright
+                widthHor = border.border.right;
+                widthVer = border.border.bottom;
+                startColor = border.colorBottom;
+                stopColor = border.colorRight;
+            }
+            else
+            { // bottomleft
+                widthHor = border.border.left;
+                widthVer = border.border.bottom;
+                startColor = border.colorLeft;
+                stopColor = border.colorBottom;
+            }
+            
+            if (startColor != null && stopColor != null)
+            {
+                final String cString1 = colorString(startColor);
+                final String cString2 = colorString(stopColor);
+        
+                String path1 = cr.getPathRadiusC(widthVer, widthHor);
+                String path2 = cr.getPathRadiusA(widthVer, widthHor);
+        
+                if (widthVer > rady || widthHor > radx)
+                {
+                    cr.isDrawn = false;
+                }
+        
+                Element q = createPath(path1, cString1, "none", 1);
+                getCurrentElem().appendChild(q);
+                q = createPath(path2, cString2, "none", 1);
+                getCurrentElem().appendChild(q);
+                return true;
+            }
+            else
+                return false;
         }
         else
             return false;
