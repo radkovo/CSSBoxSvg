@@ -913,7 +913,8 @@ public class SVGDOMRenderer implements BoxRenderer
             Color cc = grad.getStops().get(i).getColor();
             stop.setAttribute("offset", "" + grad.getStops().get(i).getPercentage() + "%");
             stop.setAttribute("style",
-                    "stop-color:rgb(" + cc.getRed() + "," + cc.getGreen() + "," + cc.getBlue() + ");stop-opacity:1");
+                    "stop-color:rgb(" + cc.getRed() + "," + cc.getGreen() + "," + cc.getBlue() +
+                    ");stop-opacity:" + (cc.getAlpha() / 255.0f));
             image.appendChild(stop);
         }
 
@@ -999,7 +1000,8 @@ public class SVGDOMRenderer implements BoxRenderer
             Color cc = grad.getStops().get(i).getColor();
             stop.setAttribute("offset", "" + grad.getStops().get(i).getPercentage() + "%");
             stop.setAttribute("style",
-                    "stop-color:rgb(" + cc.getRed() + "," + cc.getGreen() + "," + cc.getBlue() + ");stop-opacity:1");
+                    "stop-color:rgb(" + cc.getRed() + "," + cc.getGreen() + "," + cc.getBlue() +
+                    ");stop-opacity:" + (cc.getAlpha() / 255.0f));
             image.appendChild(stop);
         }
 
