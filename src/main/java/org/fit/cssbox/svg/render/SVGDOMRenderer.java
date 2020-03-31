@@ -10,10 +10,14 @@ import java.io.Writer;
 import javax.imageio.ImageIO;
 
 import cz.vutbr.web.css.CSSProperty;
+import cz.vutbr.web.css.Term;
+import cz.vutbr.web.css.CSSProperty.BackgroundPosition;
+import cz.vutbr.web.css.CSSProperty.BackgroundSize;
 import cz.vutbr.web.css.TermColor;
 import cz.vutbr.web.css.TermFunction;
 import cz.vutbr.web.css.TermIdent;
 import cz.vutbr.web.css.TermLengthOrPercent;
+import cz.vutbr.web.css.TermList;
 import cz.vutbr.web.csskit.Color;
 
 import java.util.Collection;
@@ -953,19 +957,40 @@ public class SVGDOMRenderer implements BoxRenderer
     
     private void addLinearGradient(ElementBox eb, TermFunction.LinearGradient spec, Element dest)
     {
-        CSSDecoder dec = new CSSDecoder(eb.getVisualContext());
+        ElementBox contextBox;
+        if (eb instanceof Viewport)
+        {
+            contextBox = ((Viewport) eb).getBackgroundSource(); //for viewport, we take context of the original box with the background 
+            if (contextBox == null)
+                contextBox = eb;
+        }
+        else
+            contextBox = eb;
         
-        Rectangle bb = eb.getAbsoluteBorderBounds();
-        // obtain the element size 
-        float ix = bb.x + eb.getBorder().left;
-        float iy = bb.y + eb.getBorder().top;
-        float iw = bb.width - eb.getBorder().right - eb.getBorder().left;
-        float ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
+        CSSDecoder dec = new CSSDecoder(contextBox.getVisualContext());
+        Rectangle bgsize = getBackgroundSize(contextBox, dec);
 
+        if (eb instanceof Viewport)
+        {
+            ElementBox rootBox = ((Viewport) eb).getRootBox();
+            if (rootBox != null)
+            {
+                Rectangle cbounds = rootBox.getAbsoluteBackgroundBounds(); //use root box bounds for viewport image coordinates
+                bgsize.x += cbounds.x;
+                bgsize.y += cbounds.y;
+            }
+        }
+        else
+        {
+            Rectangle cbounds = eb.getAbsoluteBackgroundBounds();
+            bgsize.x += cbounds.x;
+            bgsize.y += cbounds.y;
+        }
+        
         // gradient angle and size
         LinearGradient grad = new LinearGradient();
-        double angle = (spec.getAngle() != null) ? eb.getVisualContext().degAngle(spec.getAngle()) : 180.0;
-        grad.setAngleDeg(angle, iw, ih);
+        double angle = (spec.getAngle() != null) ? contextBox.getVisualContext().degAngle(spec.getAngle()) : 180.0;
+        grad.setAngleDeg(angle, bgsize.width, bgsize.height);
         /*System.out.println("iw=" + iw + " ih=" + ih + " " 
                 + " x1=" + grad.x1
                 + " y1=" + grad.y1
@@ -978,7 +1003,8 @@ public class SVGDOMRenderer implements BoxRenderer
         for (TermFunction.Gradient.ColorStop stop : spec.getColorStops())
         {
             Color color = stop.getColor().getValue();
-            Float percentage = decodePercentage(eb, stop.getLength(), dec, Math.sqrt(iw*iw+ih*ih)); //TODO iw?
+            Float percentage = decodePercentage(contextBox, stop.getLength(), dec,
+                    Math.sqrt(bgsize.width*bgsize.width+bgsize.height*bgsize.height)); //TODO iw?
             grad.addStop(new GradientStop(color, percentage));
         }
         grad.recomputeStops();
@@ -1011,7 +1037,155 @@ public class SVGDOMRenderer implements BoxRenderer
         String style = "stroke:none;fill-opacity:1;fill:url(#" + url + ");";
 
         // generate the element with the gradient background
-        dest.appendChild(createRect(ix, iy, iw, ih, style));
+        dest.appendChild(createRect(bgsize.x, bgsize.y, bgsize.width, bgsize.height, style));
+    }
+
+    /**
+     * Computes the background size for a given element while considering its background-size and background-position
+     * style properties.
+     * @param eb The element box for the background
+     * @param dec CSS decoder
+     * @return A rectangle describing the absolute background position and size.
+     */
+    private Rectangle getBackgroundSize(ElementBox eb, CSSDecoder dec)
+    {
+        Rectangle bb = eb.getAbsoluteBorderBounds();
+        // obtain the element size 
+        float ix = bb.x + eb.getBorder().left;
+        float iy = bb.y + eb.getBorder().top;
+        float iw = bb.width - eb.getBorder().right - eb.getBorder().left;
+        float ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
+        Rectangle bounds = new Rectangle(ix, iy, iw, ih);
+        Rectangle bgsize = new Rectangle();
+        // apply background-size when set
+        CSSProperty.BackgroundSize size = eb.getStyle().getProperty("background-size");
+        TermList sizeValues = null;
+        if (size == null) size = BackgroundSize.list_values;
+        else if (size == BackgroundSize.list_values) sizeValues = eb.getStyle().getValue(TermList.class, "background-size");
+        computeBackgroundSize(size, sizeValues, bounds, dec, bgsize);
+        // apply background position when set
+        CSSProperty.BackgroundPosition position = eb.getStyle().getProperty("background-position");
+        TermList positionValues = eb.getStyle().getValue(TermList.class, "background-position");
+        computeBackgroundPosition(position, positionValues, bounds, dec, bgsize);
+        return bgsize;
+    }
+    
+    private void computeBackgroundPosition(CSSProperty.BackgroundPosition position, TermList positionValues, Rectangle bounds, CSSDecoder dec, Rectangle result)
+    {
+        //X position
+        if (position == BackgroundPosition.LEFT)
+            result.x = 0;
+        else if (position == BackgroundPosition.RIGHT)
+            result.x = bounds.width - result.width;
+        else if (position == BackgroundPosition.CENTER)
+            result.x = (bounds.width - result.width) / 2;
+        else if (position == BackgroundPosition.list_values)
+        {
+            result.x = dec.getLength((TermLengthOrPercent) positionValues.get(0), false, 0, 0, bounds.width - result.width);
+        }
+        else
+            result.x = 0;
+        
+        //Y position
+        if (position == BackgroundPosition.TOP)
+            result.y = 0;
+        else if (position == BackgroundPosition.BOTTOM)
+            result.y = bounds.height - result.height;
+        else if (position == BackgroundPosition.CENTER)
+            result.y = (bounds.height - result.height) / 2;
+        else if (position == BackgroundPosition.list_values)
+        {
+            int i = positionValues.size() > 1 ? 1 : 0;
+            result.y = dec.getLength((TermLengthOrPercent) positionValues.get(i), false, 0, 0, bounds.height - result.height);
+        }
+        else
+            result.y = 0;
+        
+        /*if (viewportOwner)
+        {
+            ElementBox rootBox = ((Viewport) getOwner()).getRootBox();
+            if (rootBox != null)
+            {
+                Rectangle cbounds = rootBox.getAbsoluteBackgroundBounds(); //use root box bounds for viewport image coordinates
+                result.x += cbounds.x;
+                result.y += cbounds.y;
+            }
+        }*/
+    }
+    
+    private void computeBackgroundSize(CSSProperty.BackgroundSize size, TermList sizeValues, Rectangle bounds, CSSDecoder dec, Rectangle result)
+    {
+        final float ir = bounds.width / bounds.height; // intrinsic size
+        
+        if (size == BackgroundSize.COVER)
+        {
+            float w1 = bounds.width;
+            float h1 = w1 / ir;
+            float h2 = bounds.height;
+            float w2 = h2 * ir;
+            if (h1 - bounds.height > w2 - bounds.width)
+            {
+                result.width = w1; result.height = h1;
+            }
+            else
+            {
+                result.width = w2; result.height = h2;
+            }
+        }
+        else if (size == BackgroundSize.CONTAIN)
+        {
+            float w1 = bounds.width;
+            float h1 = w1 / ir;
+            float h2 = bounds.height;
+            float w2 = h2 * ir;
+            if (h1 - bounds.height < w2 - bounds.width)
+            {
+                result.width = w1; result.height = h1;
+            }
+            else
+            {
+                result.width = w2; result.height = h2;
+            }
+        }
+        else if (size == BackgroundSize.list_values)
+        {
+            if (sizeValues == null) //no values provided: auto,auto is the default
+            {
+                result.width = bounds.width;
+                result.height = bounds.height;
+            }
+            else if (sizeValues.size() == 2) //two values should be provided by jStyleParser
+            {
+                Term<?> w = sizeValues.get(0);
+                Term<?> h = sizeValues.get(1);
+                if (w instanceof TermLengthOrPercent && h instanceof TermLengthOrPercent)
+                {
+                    result.width = dec.getLength((TermLengthOrPercent) w, false, 0, 0, bounds.width);                    
+                    result.height = dec.getLength((TermLengthOrPercent) h, false, 0, 0, bounds.height);                    
+                }
+                else if (w instanceof TermLengthOrPercent)
+                {
+                    result.width = dec.getLength((TermLengthOrPercent) w, false, 0, 0, bounds.width);                    
+                    result.height = Math.round(result.width / ir);
+                }
+                else if (h instanceof TermLengthOrPercent)
+                {
+                    result.height = dec.getLength((TermLengthOrPercent) h, false, 0, 0, bounds.height);                    
+                    result.width = Math.round(result.height * ir);
+                }
+                else
+                {
+                    result.width = bounds.width;
+                    result.height = bounds.height;
+                }
+            }
+            else //this should not happen
+            {
+                result.width = bounds.width;
+                result.height = bounds.height;
+            }
+        }
+        
     }
     
     private Float decodePercentage(ElementBox eb, TermLengthOrPercent spec, CSSDecoder dec, double wholeLength)
