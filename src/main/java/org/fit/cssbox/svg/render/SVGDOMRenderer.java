@@ -629,7 +629,9 @@ public class SVGDOMRenderer implements BoxRenderer
             path += " L " + crBottomRight.h.x + " " + crBottomRight.h.y;
             path += " L " + crBottomRight.c.x + " " + crBottomRight.c.y;
         }
+        
         path += " L " + crBottomLeft.a.x + " " + (crBottomLeft.a.y) + " ";
+        
         if (crBottomLeft.isDrawn)
         {
             path += " A " + crBottomLeft.x + " " + crBottomLeft.y
@@ -642,6 +644,7 @@ public class SVGDOMRenderer implements BoxRenderer
         }
 
         path += " L " + crTopLeft.a.x + " " + (crTopLeft.a.y) + " ";
+        
         if (crTopLeft.isDrawn)
         {
             path += " A " + crTopLeft.x + " " + crTopLeft.y + " 0 0 1 "
