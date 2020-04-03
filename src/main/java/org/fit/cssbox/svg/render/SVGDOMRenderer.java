@@ -36,10 +36,14 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 
+import org.fit.cssbox.awt.BackgroundBitmap;
+import org.fit.cssbox.awt.BitmapImage;
 import org.fit.cssbox.layout.BackgroundImage;
+import org.fit.cssbox.layout.BackgroundImageImage;
 import org.fit.cssbox.layout.BlockBox;
 import org.fit.cssbox.layout.Box;
 import org.fit.cssbox.layout.CSSDecoder;
+import org.fit.cssbox.layout.ContentImage;
 import org.fit.cssbox.layout.LengthSet;
 import org.fit.cssbox.layout.ListItemBox;
 import org.fit.cssbox.layout.Rectangle;
@@ -278,32 +282,45 @@ public class SVGDOMRenderer implements BoxRenderer
             bgUsed = true;
         }
 
-        // image background
+        // bitmap image background
         if (eb.getBackgroundImages() != null && eb.getBackgroundImages().size() > 0)
         {
-            for (BackgroundImage bimg : eb.getBackgroundImages())
+            final BackgroundBitmap bitmap = new BackgroundBitmap(eb);
+            for (BackgroundImage img : eb.getBackgroundImages())
             {
-                BufferedImage img = bimg.getBufferedImage();
-                if (img != null)
+                if (img instanceof BackgroundImageImage)
                 {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    try
-                    {
-                        ImageIO.write(img, "png", os);
-                    } catch (IOException e)
-                    {
-                        //out.println("<!-- I/O error: " + e.getMessage() + " -->");
-                    }
-                    char[] data = Base64Coder.encode(os.toByteArray());
-                    String imgdata = "data:image/png;base64," + new String(data);
-                    float ix = bb.x + eb.getBorder().left;
-                    float iy = bb.y + eb.getBorder().top;
-                    float iw = bb.width - eb.getBorder().right - eb.getBorder().left;
-                    float ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
-                    bgWrap.appendChild(createImage(ix, iy, iw, ih, imgdata));
-                    bgUsed = true;
+                    bitmap.addBackgroundImage((BackgroundImageImage) img);
                 }
             }
+            if (bitmap.getBufferedImage() != null)
+            {
+                final Rectangle b = eb.getAbsoluteBackgroundBounds();
+                bgWrap.appendChild(createImage(b.x, b.y, b.width, b.height, bitmap.getBufferedImage()));
+                bgUsed = true;
+            }            
+            
+            
+            
+            /*for (BackgroundImage bimg : eb.getBackgroundImages())
+            {
+                if (bimg instanceof BackgroundImageImage)
+                {
+                    ContentImage img = ((BackgroundImageImage) bimg).getImage();
+                    if (img != null)
+                    {
+                        if (img instanceof BitmapImage)
+                        {
+                            float ix = bb.x + eb.getBorder().left;
+                            float iy = bb.y + eb.getBorder().top;
+                            float iw = bb.width - eb.getBorder().right - eb.getBorder().left;
+                            float ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
+                            bgWrap.appendChild(createImage(ix, iy, iw, ih, (BitmapImage) img));
+                            bgUsed = true;
+                        }
+                    }
+                }
+            }*/
         }
 
         // generate a border group
@@ -373,32 +390,21 @@ public class SVGDOMRenderer implements BoxRenderer
         if (ofs == -1) ofs = ctx.getBaselineOffset(); //use the font baseline
         float x = lb.getAbsoluteContentX() - 0.5f * ctx.getEm();
         float y = lb.getAbsoluteContentY() + ofs;
-        BufferedImage img = lb.getMarkerImage().getBufferedImage();
+        ContentImage img = lb.getMarkerImage().getImage();
         if (img != null)
         {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            try
+            if (img instanceof BitmapImage)
             {
-                ImageIO.write(img, "png", os);
-            } catch (IOException e)
-            {
-                e.printStackTrace();
+                float iw = img.getWidth();
+                float ih = img.getHeight();
+                float ix = x - iw;
+                float iy = y - ih;
+                Element image = createImage(ix, iy, iw, ih, (BitmapImage) img);
+                getCurrentElem().appendChild(image);
+                return true;
             }
-            char[] data = Base64Coder.encode(os.toByteArray());
-            String imgdata = "data:image/png;base64," + new String(data);
-            float iw = img.getWidth();
-            float ih = img.getHeight();
-            float ix = x - iw;
-            float iy = y - ih;
-            //out.println("<image x=\"" + ix + "\" y=\"" + iy + "\" width=\"" + iw + "\" height=\"" + ih + "\" xlink:href=\"" + imgdata + "\" />");
-            Element image = doc.createElementNS(svgNS, "image");
-            image.setAttribute("x", Float.toString(ix));
-            image.setAttribute("y", Float.toString(iy));
-            image.setAttribute("width", Float.toString(iw));
-            image.setAttribute("height", Float.toString(ih));
-            image.setAttributeNS(xlinkNS, "xlink:href", imgdata);
-            getCurrentElem().appendChild(image);
-            return true;
+            else
+                return false;
         }
         else
             return false;
@@ -533,28 +539,15 @@ public class SVGDOMRenderer implements BoxRenderer
         {
             if (cont instanceof ReplacedImage)
             {
-                BufferedImage img = ((ReplacedImage) cont).getBufferedImage();
+                ContentImage img = ((ReplacedImage) cont).getImage();
                 if (img != null)
                 {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    try
+                    if (img instanceof BitmapImage)
                     {
-                        ImageIO.write(img, "png", os);
-                    } catch (IOException e)
-                    {
-                        e.printStackTrace();
+                        Rectangle cb = ((Box) box).getAbsoluteContentBounds();
+                        Element image = createImage(cb.x, cb.y, cb.width, cb.height, (BitmapImage) img); 
+                        getCurrentElem().appendChild(image);
                     }
-                    char[] data = Base64Coder.encode(os.toByteArray());
-                    String imgdata = "data:image/png;base64," + new String(data);
-                    Rectangle cb = ((Box) box).getAbsoluteContentBounds();
-
-                    Element image = doc.createElementNS(svgNS, "image");
-                    image.setAttribute("x", Float.toString(cb.x));
-                    image.setAttribute("y", Float.toString(cb.y));
-                    image.setAttribute("width", Float.toString(cb.width));
-                    image.setAttribute("height", Float.toString(cb.height));
-                    image.setAttributeNS(xlinkNS, "xlink:href", imgdata);
-                    getCurrentElem().appendChild(image);
                 }
             }
             else if (cont instanceof ReplacedText)
@@ -1260,6 +1253,26 @@ public class SVGDOMRenderer implements BoxRenderer
         return e;
     }
 
+    public Element createImage(float x, float y, float width, float height, BitmapImage img)
+    {
+        return createImage(x, y, width, height, img.getBufferedImage());
+    }
+    
+    public Element createImage(float x, float y, float width, float height, BufferedImage img)
+    {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try
+        {
+            ImageIO.write(img, "png", os);
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        char[] data = Base64Coder.encode(os.toByteArray());
+        String imgdata = "data:image/png;base64," + new String(data);
+        return createImage(x, y, width, height, imgdata);
+    }
+    
     public Element createImage(float x, float y, float width, float height, String imgData)
     {
         Element image = createElement("image");
