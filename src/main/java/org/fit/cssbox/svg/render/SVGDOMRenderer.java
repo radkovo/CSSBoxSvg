@@ -295,32 +295,9 @@ public class SVGDOMRenderer implements BoxRenderer
             }
             if (bitmap.getBufferedImage() != null)
             {
-                final Rectangle b = eb.getAbsoluteBackgroundBounds();
-                bgWrap.appendChild(createImage(b.x, b.y, b.width, b.height, bitmap.getBufferedImage()));
+                bgWrap.appendChild(createImage(bb.x, bb.y, bb.width, bb.height, bitmap.getBufferedImage()));
                 bgUsed = true;
             }            
-            
-            
-            
-            /*for (BackgroundImage bimg : eb.getBackgroundImages())
-            {
-                if (bimg instanceof BackgroundImageImage)
-                {
-                    ContentImage img = ((BackgroundImageImage) bimg).getImage();
-                    if (img != null)
-                    {
-                        if (img instanceof BitmapImage)
-                        {
-                            float ix = bb.x + eb.getBorder().left;
-                            float iy = bb.y + eb.getBorder().top;
-                            float iw = bb.width - eb.getBorder().right - eb.getBorder().left;
-                            float ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
-                            bgWrap.appendChild(createImage(ix, iy, iw, ih, (BitmapImage) img));
-                            bgUsed = true;
-                        }
-                    }
-                }
-            }*/
         }
 
         // generate a border group
@@ -625,57 +602,55 @@ public class SVGDOMRenderer implements BoxRenderer
         CornerRadius crBottomLeft = border.getRadius(4);
         CornerRadius crBottomRight = border.getRadius(3);
 
-        // postupne dokola kolem celeho elementu, pomoci SVG path prikazu elipticky oblouk a linka
-        String path = "M " + (crTopLeft.d.x) + " " + (crTopLeft.d.y) + " ";
+        String path = "M " + (crTopLeft.c.x) + " " + (crTopLeft.c.y) + " ";
 
-        path += " L " + crTopRight.b.x + " " + (crTopRight.b.y) + " ";
+        path += " L " + crTopRight.a.x + " " + (crTopRight.a.y) + " ";
 
         if (crTopRight.isDrawn)
         {
-            path += " A " + (crTopRight.x - border.border.right) + " " + (crTopRight.y - border.border.top) + " 0 0 1 "
-                    + crTopRight.d.x + " " + crTopRight.d.y;
+            path += " A " + crTopRight.x + " " + crTopRight.y + " 0 0 1 "
+                    + crTopRight.c.x + " " + crTopRight.c.y;
         }
         else
         {
-            path += " L " + crTopRight.g.x + " " + crTopRight.g.y;
-            path += " L " + crTopRight.d.x + " " + crTopRight.d.y;
-
+            path += " L " + crTopRight.h.x + " " + crTopRight.h.y;
+            path += " L " + crTopRight.c.x + " " + crTopRight.c.y;
         }
 
-        path += " L " + crBottomRight.b.x + " " + (crBottomRight.b.y) + " ";
+        path += " L " + crBottomRight.a.x + " " + (crBottomRight.a.y) + " ";
 
         if (crBottomRight.isDrawn)
         {
-            path += " A " + (crBottomRight.x - border.border.right) + " " + (crBottomRight.y - border.border.bottom)
-                    + " 0 0 1 " + crBottomRight.d.x + " " + crBottomRight.d.y;
+            path += " A " + crBottomRight.x + " " + crBottomRight.y
+                    + " 0 0 1 " + crBottomRight.c.x + " " + crBottomRight.c.y;
         }
         else
         {
-            path += " L " + crBottomRight.g.x + " " + crBottomRight.g.y;
-            path += " L " + crBottomRight.d.x + " " + crBottomRight.d.y;
+            path += " L " + crBottomRight.h.x + " " + crBottomRight.h.y;
+            path += " L " + crBottomRight.c.x + " " + crBottomRight.c.y;
         }
-        path += " L " + crBottomLeft.b.x + " " + (crBottomLeft.b.y) + " ";
+        path += " L " + crBottomLeft.a.x + " " + (crBottomLeft.a.y) + " ";
         if (crBottomLeft.isDrawn)
         {
-            path += " A " + (crBottomLeft.x - border.border.left) + " " + (crBottomLeft.y - border.border.bottom)
-                    + " 0 0 1 " + crBottomLeft.d.x + " " + crBottomLeft.d.y;
+            path += " A " + crBottomLeft.x + " " + crBottomLeft.y
+                    + " 0 0 1 " + crBottomLeft.c.x + " " + crBottomLeft.c.y;
         }
         else
         {
-            path += " L " + crBottomLeft.g.x + " " + crBottomLeft.g.y;
-            path += " L " + crBottomLeft.d.x + " " + crBottomLeft.d.y;
+            path += " L " + crBottomLeft.h.x + " " + crBottomLeft.h.y;
+            path += " L " + crBottomLeft.c.x + " " + crBottomLeft.c.y;
         }
 
-        path += " L " + crTopLeft.b.x + " " + (crTopLeft.b.y) + " ";
+        path += " L " + crTopLeft.a.x + " " + (crTopLeft.a.y) + " ";
         if (crTopLeft.isDrawn)
         {
-            path += " A " + (crTopLeft.x - border.border.left) + " " + (crTopLeft.y - border.border.top) + " 0 0 1 "
-                    + crTopLeft.d.x + " " + crTopLeft.d.y;
+            path += " A " + crTopLeft.x + " " + crTopLeft.y + " 0 0 1 "
+                    + crTopLeft.c.x + " " + crTopLeft.c.y;
         }
         else
         {
-            path += " L " + crTopLeft.g.x + " " + crTopLeft.g.y;
-            path += " L " + crTopLeft.d.x + " " + crTopLeft.d.y;
+            path += " L " + crTopLeft.h.x + " " + crTopLeft.h.y;
+            path += " L " + crTopLeft.c.x + " " + crTopLeft.c.y;
         }
         q = createPath(path, "none", "none", 0);
         return q;
@@ -968,14 +943,14 @@ public class SVGDOMRenderer implements BoxRenderer
             ElementBox rootBox = ((Viewport) eb).getRootBox();
             if (rootBox != null)
             {
-                Rectangle cbounds = rootBox.getAbsoluteBackgroundBounds(); //use root box bounds for viewport image coordinates
+                Rectangle cbounds = rootBox.getAbsolutePaddingBounds(); //use root box bounds for viewport image coordinates
                 bgsize.x += cbounds.x;
                 bgsize.y += cbounds.y;
             }
         }
         else
         {
-            Rectangle cbounds = eb.getAbsoluteBackgroundBounds();
+            Rectangle cbounds = eb.getAbsolutePaddingBounds();
             bgsize.x += cbounds.x;
             bgsize.y += cbounds.y;
         }
