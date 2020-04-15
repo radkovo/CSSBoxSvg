@@ -10,14 +10,7 @@ import java.io.Writer;
 import javax.imageio.ImageIO;
 
 import cz.vutbr.web.css.CSSProperty;
-import cz.vutbr.web.css.Term;
-import cz.vutbr.web.css.CSSProperty.BackgroundPosition;
-import cz.vutbr.web.css.CSSProperty.BackgroundSize;
 import cz.vutbr.web.css.TermColor;
-import cz.vutbr.web.css.TermFunction;
-import cz.vutbr.web.css.TermIdent;
-import cz.vutbr.web.css.TermLengthOrPercent;
-import cz.vutbr.web.css.TermList;
 import cz.vutbr.web.csskit.Color;
 
 import java.util.Collection;
@@ -38,11 +31,10 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.fit.cssbox.awt.BackgroundBitmap;
 import org.fit.cssbox.awt.BitmapImage;
+import org.fit.cssbox.css.BackgroundDecoder;
 import org.fit.cssbox.layout.BackgroundImage;
-import org.fit.cssbox.layout.BackgroundImageImage;
 import org.fit.cssbox.layout.BlockBox;
 import org.fit.cssbox.layout.Box;
-import org.fit.cssbox.layout.CSSDecoder;
 import org.fit.cssbox.layout.ContentImage;
 import org.fit.cssbox.layout.LengthSet;
 import org.fit.cssbox.layout.ListItemBox;
@@ -53,13 +45,15 @@ import org.fit.cssbox.layout.ReplacedText;
 import org.fit.cssbox.layout.Viewport;
 import org.fit.cssbox.layout.VisualContext;
 import org.fit.cssbox.misc.Base64Coder;
-import org.fit.cssbox.render.BoxRenderer;
+import org.fit.cssbox.render.BackgroundImageGradient;
+import org.fit.cssbox.render.BackgroundImageImage;
+import org.fit.cssbox.render.Gradient;
+import org.fit.cssbox.render.LinearGradient;
+import org.fit.cssbox.render.RadialGradient;
+import org.fit.cssbox.render.StructuredRenderer;
 import org.fit.cssbox.svg.layout.Border;
 import org.fit.cssbox.svg.layout.CornerRadius;
 import org.fit.cssbox.svg.layout.DPoint;
-import org.fit.cssbox.svg.layout.GradientStop;
-import org.fit.cssbox.svg.layout.LinearGradient;
-import org.fit.cssbox.svg.layout.RadialGradient;
 import org.fit.cssbox.svg.layout.Transform;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -73,7 +67,7 @@ import org.fit.cssbox.layout.TextBox;
  * @author Martin Safar
  * @author burgetr
  */
-public class SVGDOMRenderer implements BoxRenderer
+public class SVGDOMRenderer extends StructuredRenderer
 {
     private static final float MIN = 0.0001f; //minimal coordinate difference to take into account
     
@@ -253,7 +247,7 @@ public class SVGDOMRenderer implements BoxRenderer
         Element bgWrap = createElement("g"); //background wrapper
         boolean bgUsed = false;
 
-        final CSSProperty.BackgroundImage bgImageSpec = eb.getStyle().getProperty("background-image");
+        /*final CSSProperty.BackgroundImage bgImageSpec = eb.getStyle().getProperty("background-image");
         if (bgImageSpec == CSSProperty.BackgroundImage.gradient)
         {
             TermFunction.Gradient gradFunction = eb.getStyle().getValue(TermFunction.Gradient.class, "background-image");
@@ -267,37 +261,61 @@ public class SVGDOMRenderer implements BoxRenderer
                 addRadialGradient(eb, (TermFunction.RadialGradient) gradFunction, bgWrap);
                 bgUsed = true;
             }
-        }
+        }*/
         
         Rectangle bb = eb.getAbsoluteBorderBounds();
         if (eb instanceof Viewport)
         {
             bb = eb.getClippedBounds();
         }
-        final Color bg = eb.getBgcolor();
-        if (bg != null) // color background
+        
+        BackgroundDecoder bg = findBackgroundSource(eb);
+        if (bg != null)
         {
-            final String style = "stroke:none;fill-opacity:1;fill:" + colorString(bg);
-            bgWrap.appendChild(createRect(bb.x, bb.y, bb.width, bb.height, style));
-            bgUsed = true;
-        }
-
-        // bitmap image background
-        if (eb.getBackgroundImages() != null && eb.getBackgroundImages().size() > 0)
-        {
-            final BackgroundBitmap bitmap = new BackgroundBitmap(eb);
-            for (BackgroundImage img : eb.getBackgroundImages())
+            // color background
+            if (bg.getBgcolor() != null) 
             {
-                if (img instanceof BackgroundImageImage)
+                final String style = "stroke:none;fill-opacity:1;fill:" + colorString(bg.getBgcolor());
+                bgWrap.appendChild(createRect(bb.x, bb.y, bb.width, bb.height, style));
+                bgUsed = true;
+            }
+    
+            // bitmap image background
+            if (bg.getBackgroundImages() != null && bg.getBackgroundImages().size() > 0)
+            {
+                final BackgroundBitmap bitmap = new BackgroundBitmap(eb);
+                for (BackgroundImage img : bg.getBackgroundImages())
                 {
-                    bitmap.addBackgroundImage((BackgroundImageImage) img);
+                    if (img instanceof BackgroundImageImage)
+                    {
+                        bitmap.addBackgroundImage((BackgroundImageImage) img);
+                    }
+                }
+                if (bitmap.getBufferedImage() != null)
+                {
+                    bgWrap.appendChild(createImage(bb.x, bb.y, bb.width, bb.height, bitmap.getBufferedImage()));
+                    bgUsed = true;
+                }            
+            }
+            // gradient background
+            if (bg.getBackgroundImages() != null && bg.getBackgroundImages().size() > 0)
+            {
+                for (BackgroundImage img : bg.getBackgroundImages())
+                {
+                    if (img instanceof BackgroundImageGradient)
+                    {
+                        Gradient grad = ((BackgroundImageGradient) img).getGradient();
+                        if (grad instanceof LinearGradient)
+                        {
+                            addLinearGradient((BackgroundImageGradient) img, bb, bgWrap);
+                        }
+                        else if (grad instanceof RadialGradient)
+                        {
+                            addRadialGradient((BackgroundImageGradient) img, bb, bgWrap);
+                        }
+                    }
                 }
             }
-            if (bitmap.getBufferedImage() != null)
-            {
-                bgWrap.appendChild(createImage(bb.x, bb.y, bb.width, bb.height, bitmap.getBufferedImage()));
-                bgUsed = true;
-            }            
         }
 
         // generate a border group
@@ -817,58 +835,12 @@ public class SVGDOMRenderer implements BoxRenderer
             return false;
     }
 
-    private void addRadialGradient(ElementBox eb, TermFunction.RadialGradient spec, Element dest)
+    private void addRadialGradient(BackgroundImageGradient bgimage, Rectangle bgarea, Element dest)
     {
-        CSSDecoder dec = new CSSDecoder(eb.getVisualContext());
-        
-        Rectangle bb = eb.getAbsoluteBorderBounds();
-        // element sizes
-        float ix = bb.x + eb.getBorder().left;
-        float iy = bb.y + eb.getBorder().top;
-        float iw = bb.width - eb.getBorder().right - eb.getBorder().left;
-        float ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
-
-        // stops
-        RadialGradient grad = new RadialGradient(eb.getClippedContentBounds());
-        for (TermFunction.Gradient.ColorStop stop : spec.getColorStops())
-        {
-            Color color = stop.getColor().getValue();
-            Float percentage = decodePercentage(eb, stop.getLength(), dec, iw); //TODO iw?
-            grad.addStop(new GradientStop(color, percentage));
-        }
-        grad.recomputeStops();
-
-        // position
-        float px = dec.getLength(spec.getPosition()[0], false, 0, 0, iw);
-        float py = dec.getLength(spec.getPosition()[1], false, 0, 0, ih);
-        
-        if ("circle".equals(spec.getShape().getValue()))
-        {
-            RadialGradient.RadLengths ident = decodeSizeIdent(spec.getSizeIdent());
-            if (ident != null)
-            {
-                grad.setCircleDataRadLengths(ident, px, py);
-            }
-            else
-            {
-                double r = dec.getLength(spec.getSize()[0], false, 0, 0, iw);
-                grad.setCircleData(r, px, py);
-            }
-        }
-        else //ellipse
-        {
-            RadialGradient.RadLengths ident = decodeSizeIdent(spec.getSizeIdent());
-            if (ident != null)
-            {
-                grad.setEllipseDataRadLengths(ident, px, py);
-            }
-            else
-            {
-                double rx = dec.getLength(spec.getSize()[0], false, 0, 0, iw);
-                double ry = dec.getLength(spec.getSize()[1], false, 0, 0, ih);
-                grad.setEllipseData(rx, ry, px, py);
-            }
-        }
+        RadialGradient grad = (RadialGradient) bgimage.getGradient();
+        Rectangle bgsize = bgimage.getComputedPosition();
+        bgsize.x += bgarea.x;
+        bgsize.y += bgarea.y;
         
         final String url = "cssbox-gradient-" + (idcounter++);
         final Element defs = createElement("defs");
@@ -876,11 +848,11 @@ public class SVGDOMRenderer implements BoxRenderer
         image = createElement("radialGradient");
 
         // geterate the SVG element for gradient
-        image.setAttribute("r", String.valueOf(grad.r) + "%");
-        image.setAttribute("cx", String.valueOf(grad.cx) + "%");
-        image.setAttribute("cy", String.valueOf(grad.cy) + "%");
-        image.setAttribute("fx", String.valueOf(grad.fx) + "%");
-        image.setAttribute("fy", String.valueOf(grad.fy) + "%");
+        image.setAttribute("r", String.valueOf(grad.getEfficientRx()) + "%");
+        image.setAttribute("cx", String.valueOf(grad.getCx()) + "%");
+        image.setAttribute("cy", String.valueOf(grad.getCy()) + "%");
+        //image.setAttribute("fx", String.valueOf(grad.fx) + "%");
+        //image.setAttribute("fy", String.valueOf(grad.fy) + "%");
         image.setAttribute("id", url);
         for (int i = 0; i < grad.getStops().size(); i++)
         {
@@ -900,12 +872,12 @@ public class SVGDOMRenderer implements BoxRenderer
         Element clipPath = createElement("clipPath");
         clipPath.setAttribute("id", clip);
 
-        clipPath.appendChild(createRect(ix, iy, iw, ih, ""));
+        clipPath.appendChild(createRect(bgsize.x, bgsize.y, bgsize.width, bgsize.height, ""));
         dest.appendChild(clipPath);
 
         // generate the background element
         // additionally, a clip element is generated
-        if (grad.isCircle())
+        /*if (grad.isCircle())
         {
             float max = Math.max(iw, ih);
             double x = (max == iw ? ix : ix - ((max - iw) * grad.cx / 100));
@@ -923,62 +895,15 @@ public class SVGDOMRenderer implements BoxRenderer
             Element e = createRect(x, y, grad.newWidth, grad.newHeight, style);
             e.setAttribute("clip-path", "url(#" + clip + ")");
             dest.appendChild(e);
-        }
+        }*/
     }
     
-    private void addLinearGradient(ElementBox eb, TermFunction.LinearGradient spec, Element dest)
+    private void addLinearGradient(BackgroundImageGradient bgimage, Rectangle bgarea, Element dest)
     {
-        ElementBox contextBox;
-        if (eb instanceof Viewport)
-        {
-            contextBox = ((Viewport) eb).getBackgroundSource(); //for viewport, we take context of the original box with the background 
-            if (contextBox == null)
-                contextBox = eb;
-        }
-        else
-            contextBox = eb;
-        
-        CSSDecoder dec = new CSSDecoder(contextBox.getVisualContext());
-        Rectangle bgsize = getBackgroundSize(contextBox, dec);
-
-        if (eb instanceof Viewport)
-        {
-            ElementBox rootBox = ((Viewport) eb).getRootBox();
-            if (rootBox != null)
-            {
-                Rectangle cbounds = rootBox.getAbsolutePaddingBounds(); //use root box bounds for viewport image coordinates
-                bgsize.x += cbounds.x;
-                bgsize.y += cbounds.y;
-            }
-        }
-        else
-        {
-            Rectangle cbounds = eb.getAbsolutePaddingBounds();
-            bgsize.x += cbounds.x;
-            bgsize.y += cbounds.y;
-        }
-        
-        // gradient angle and size
-        LinearGradient grad = new LinearGradient();
-        double angle = (spec.getAngle() != null) ? contextBox.getVisualContext().degAngle(spec.getAngle()) : 180.0;
-        grad.setAngleDeg(angle, bgsize.width, bgsize.height);
-        /*System.out.println("iw=" + iw + " ih=" + ih + " " 
-                + " x1=" + grad.x1
-                + " y1=" + grad.y1
-                + " x2=" + grad.x2
-                + " y2=" + grad.y2
-                + " a=" + angle
-                );
-        System.out.println("len=" + grad.getGradientLength(iw, ih));*/
-        // stops
-        for (TermFunction.Gradient.ColorStop stop : spec.getColorStops())
-        {
-            Color color = stop.getColor().getValue();
-            Float percentage = decodePercentage(contextBox, stop.getLength(), dec,
-                    Math.sqrt(bgsize.width*bgsize.width+bgsize.height*bgsize.height)); //TODO iw?
-            grad.addStop(new GradientStop(color, percentage));
-        }
-        grad.recomputeStops();
+        LinearGradient grad = (LinearGradient) bgimage.getGradient();
+        Rectangle bgsize = bgimage.getComputedPosition();
+        bgsize.x += bgarea.x;
+        bgsize.y += bgarea.y;
         // generate code
         String url = "cssbox-gradient-" + idcounter;
         idcounter++;
@@ -986,10 +911,13 @@ public class SVGDOMRenderer implements BoxRenderer
         Element defs = createElement("defs");
         Element image;
         image = createElement("linearGradient");
-        image.setAttribute("x1", String.valueOf(grad.x1) + "%");
-        image.setAttribute("y1", String.valueOf(grad.y1) + "%");
-        image.setAttribute("x2", String.valueOf(grad.x2) + "%");
-        image.setAttribute("y2", String.valueOf(grad.y2) + "%");
+        image.setAttribute("gradientUnits", "userSpaceOnUse");
+        if (grad.isRepeating())
+            image.setAttribute("spreadMethod", "repeat");
+        image.setAttribute("x1", String.valueOf(grad.getX1() + bgsize.x) + "px");
+        image.setAttribute("y1", String.valueOf(grad.getY1() + bgsize.y) + "px");
+        image.setAttribute("x2", String.valueOf(grad.getEfficientX2() + bgsize.x) + "px");
+        image.setAttribute("y2", String.valueOf(grad.getEfficientY2() + bgsize.y) + "px");
         image.setAttribute("id", url);
         for (int i = 0; i < grad.getStops().size(); i++)
         {
@@ -1009,194 +937,6 @@ public class SVGDOMRenderer implements BoxRenderer
 
         // generate the element with the gradient background
         dest.appendChild(createRect(bgsize.x, bgsize.y, bgsize.width, bgsize.height, style));
-    }
-
-    /**
-     * Computes the background size for a given element while considering its background-size and background-position
-     * style properties.
-     * @param eb The element box for the background
-     * @param dec CSS decoder
-     * @return A rectangle describing the absolute background position and size.
-     */
-    private Rectangle getBackgroundSize(ElementBox eb, CSSDecoder dec)
-    {
-        Rectangle bb = eb.getAbsoluteBorderBounds();
-        // obtain the element size 
-        float ix = bb.x + eb.getBorder().left;
-        float iy = bb.y + eb.getBorder().top;
-        float iw = bb.width - eb.getBorder().right - eb.getBorder().left;
-        float ih = bb.height - eb.getBorder().bottom - eb.getBorder().top;
-        Rectangle bounds = new Rectangle(ix, iy, iw, ih);
-        Rectangle bgsize = new Rectangle();
-        // apply background-size when set
-        CSSProperty.BackgroundSize size = eb.getStyle().getProperty("background-size");
-        TermList sizeValues = null;
-        if (size == null) size = BackgroundSize.list_values;
-        else if (size == BackgroundSize.list_values) sizeValues = eb.getStyle().getValue(TermList.class, "background-size");
-        computeBackgroundSize(size, sizeValues, bounds, dec, bgsize);
-        // apply background position when set
-        CSSProperty.BackgroundPosition position = eb.getStyle().getProperty("background-position");
-        TermList positionValues = eb.getStyle().getValue(TermList.class, "background-position");
-        computeBackgroundPosition(position, positionValues, bounds, dec, bgsize);
-        return bgsize;
-    }
-    
-    private void computeBackgroundPosition(CSSProperty.BackgroundPosition position, TermList positionValues, Rectangle bounds, CSSDecoder dec, Rectangle result)
-    {
-        //X position
-        if (position == BackgroundPosition.LEFT)
-            result.x = 0;
-        else if (position == BackgroundPosition.RIGHT)
-            result.x = bounds.width - result.width;
-        else if (position == BackgroundPosition.CENTER)
-            result.x = (bounds.width - result.width) / 2;
-        else if (position == BackgroundPosition.list_values)
-        {
-            result.x = dec.getLength((TermLengthOrPercent) positionValues.get(0), false, 0, 0, bounds.width - result.width);
-        }
-        else
-            result.x = 0;
-        
-        //Y position
-        if (position == BackgroundPosition.TOP)
-            result.y = 0;
-        else if (position == BackgroundPosition.BOTTOM)
-            result.y = bounds.height - result.height;
-        else if (position == BackgroundPosition.CENTER)
-            result.y = (bounds.height - result.height) / 2;
-        else if (position == BackgroundPosition.list_values)
-        {
-            int i = positionValues.size() > 1 ? 1 : 0;
-            result.y = dec.getLength((TermLengthOrPercent) positionValues.get(i), false, 0, 0, bounds.height - result.height);
-        }
-        else
-            result.y = 0;
-        
-        /*if (viewportOwner)
-        {
-            ElementBox rootBox = ((Viewport) getOwner()).getRootBox();
-            if (rootBox != null)
-            {
-                Rectangle cbounds = rootBox.getAbsoluteBackgroundBounds(); //use root box bounds for viewport image coordinates
-                result.x += cbounds.x;
-                result.y += cbounds.y;
-            }
-        }*/
-    }
-    
-    private void computeBackgroundSize(CSSProperty.BackgroundSize size, TermList sizeValues, Rectangle bounds, CSSDecoder dec, Rectangle result)
-    {
-        final float ir = bounds.width / bounds.height; // intrinsic size
-        
-        if (size == BackgroundSize.COVER)
-        {
-            float w1 = bounds.width;
-            float h1 = w1 / ir;
-            float h2 = bounds.height;
-            float w2 = h2 * ir;
-            if (h1 - bounds.height > w2 - bounds.width)
-            {
-                result.width = w1; result.height = h1;
-            }
-            else
-            {
-                result.width = w2; result.height = h2;
-            }
-        }
-        else if (size == BackgroundSize.CONTAIN)
-        {
-            float w1 = bounds.width;
-            float h1 = w1 / ir;
-            float h2 = bounds.height;
-            float w2 = h2 * ir;
-            if (h1 - bounds.height < w2 - bounds.width)
-            {
-                result.width = w1; result.height = h1;
-            }
-            else
-            {
-                result.width = w2; result.height = h2;
-            }
-        }
-        else if (size == BackgroundSize.list_values)
-        {
-            if (sizeValues == null) //no values provided: auto,auto is the default
-            {
-                result.width = bounds.width;
-                result.height = bounds.height;
-            }
-            else if (sizeValues.size() == 2) //two values should be provided by jStyleParser
-            {
-                Term<?> w = sizeValues.get(0);
-                Term<?> h = sizeValues.get(1);
-                if (w instanceof TermLengthOrPercent && h instanceof TermLengthOrPercent)
-                {
-                    result.width = dec.getLength((TermLengthOrPercent) w, false, 0, 0, bounds.width);                    
-                    result.height = dec.getLength((TermLengthOrPercent) h, false, 0, 0, bounds.height);                    
-                }
-                else if (w instanceof TermLengthOrPercent)
-                {
-                    result.width = dec.getLength((TermLengthOrPercent) w, false, 0, 0, bounds.width);                    
-                    result.height = Math.round(result.width / ir);
-                }
-                else if (h instanceof TermLengthOrPercent)
-                {
-                    result.height = dec.getLength((TermLengthOrPercent) h, false, 0, 0, bounds.height);                    
-                    result.width = Math.round(result.height * ir);
-                }
-                else
-                {
-                    result.width = bounds.width;
-                    result.height = bounds.height;
-                }
-            }
-            else //this should not happen
-            {
-                result.width = bounds.width;
-                result.height = bounds.height;
-            }
-        }
-        
-    }
-    
-    private Float decodePercentage(ElementBox eb, TermLengthOrPercent spec, CSSDecoder dec, double wholeLength)
-    {
-        if (spec != null)
-        {
-            if (spec.isPercentage())
-            {
-                return spec.getValue();
-            }
-            else
-            {
-                float abs = dec.getLength(spec, false, 0, 0, 0);
-                return (float) ((abs / wholeLength) * 100.0);
-            }
-        }
-        else
-            return null;
-    }
-    
-    private RadialGradient.RadLengths decodeSizeIdent(TermIdent ident)
-    {
-        if (ident != null)
-        {
-            switch (ident.getValue())
-            {
-                case "closest-side":
-                    return RadialGradient.RadLengths.CLOSEST_SIDE;
-                case "closest-corner":
-                    return RadialGradient.RadLengths.CLOSEST_CORNER;
-                case "farthest-side":
-                    return RadialGradient.RadLengths.FARTHEST_SIDE;
-                case "farthest-corner":
-                    return RadialGradient.RadLengths.FARTHEST_CORNER;
-                default:
-                    return null;
-            }
-        }
-        else
-            return null;
     }
     
     public Element createPath(String dPath, String fill, String stroke, float strokeWidth)
