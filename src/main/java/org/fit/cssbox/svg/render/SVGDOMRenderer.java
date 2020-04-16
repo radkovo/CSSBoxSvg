@@ -848,9 +848,17 @@ public class SVGDOMRenderer extends StructuredRenderer
         image.setAttribute("gradientUnits", "userSpaceOnUse");
         if (grad.isRepeating())
             image.setAttribute("spreadMethod", "repeat");
+        float scaleY = 1.0f;
+        if (!grad.isCircle())
+        {
+            // scale Y to achieve desired radius ratio
+            if (grad.getRx() > 0)
+                scaleY = grad.getRy() / grad.getRx();
+            image.setAttribute("gradientTransform", "scale(1," + scaleY + ") ");
+        }
         image.setAttribute("r", String.valueOf(grad.getEfficientRx()));
         image.setAttribute("cx", String.valueOf(grad.getCx() + bgsize.x));
-        image.setAttribute("cy", String.valueOf(grad.getCy() + bgsize.y));
+        image.setAttribute("cy", String.valueOf((grad.getCy() + bgsize.y) / scaleY));
         image.setAttribute("id", url);
         for (int i = 0; i < grad.getStops().size(); i++)
         {
@@ -863,19 +871,6 @@ public class SVGDOMRenderer extends StructuredRenderer
             image.appendChild(stop);
         }
         
-        if (!grad.isCircle())
-        {
-            // scale Y to achieve desired radius ratio
-            float scaleY = 1.0f;
-            if (grad.getRx() > 0)
-                scaleY = grad.getRy() / grad.getRx();
-            String trans = "" 
-                   + "translate(" + grad.getCx() + "," + grad.getCy() + ") "
-                   + "scale(1," + scaleY + ") "
-                   + "translate(" + (-grad.getCx()) + "," + (-grad.getCy()) + ")";
-            image.setAttribute("gradientTransform", trans);
-        }
-
         defs.appendChild(image);
         dest.appendChild(defs);
         
