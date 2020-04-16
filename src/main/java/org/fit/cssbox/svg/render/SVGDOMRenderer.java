@@ -47,6 +47,7 @@ import org.fit.cssbox.layout.VisualContext;
 import org.fit.cssbox.misc.Base64Coder;
 import org.fit.cssbox.render.BackgroundImageGradient;
 import org.fit.cssbox.render.BackgroundImageImage;
+import org.fit.cssbox.render.BackgroundRepeater;
 import org.fit.cssbox.render.Gradient;
 import org.fit.cssbox.render.LinearGradient;
 import org.fit.cssbox.render.RadialGradient;
@@ -248,10 +249,12 @@ public class SVGDOMRenderer extends StructuredRenderer
         boolean bgUsed = false;
 
         Rectangle bb = eb.getAbsoluteBorderBounds();
+        Rectangle clipped = eb.getClippedBounds();
         if (eb instanceof Viewport)
         {
-            bb = eb.getClippedBounds();
+            bb = clipped;
         }
+        clipped = new Rectangle(clipped.x - bb.x, clipped.y - bb.y, clipped.width, clipped.height); //make the clip relative to the background bounds
         
         BackgroundDecoder bg = findBackgroundSource(eb);
         if (bg != null)
@@ -285,16 +288,8 @@ public class SVGDOMRenderer extends StructuredRenderer
                             bgWrap.appendChild(createImage(bb.x, bb.y, bb.width, bb.height, bitmap.getBufferedImage()));
                             bitmap = null;
                         }
-                        //insert the gradient
-                        Gradient grad = ((BackgroundImageGradient) img).getGradient();
-                        if (grad instanceof LinearGradient)
-                        {
-                            addLinearGradient((BackgroundImageGradient) img, bb, bgWrap);
-                        }
-                        else if (grad instanceof RadialGradient)
-                        {
-                            addRadialGradient((BackgroundImageGradient) img, bb, bgWrap);
-                        }
+                        //insert the gradient with repeating
+                        addGradient((BackgroundImageGradient) img, bb, clipped, bgWrap);
                     }
                 }
                 //flush eventual bitmaps
@@ -823,12 +818,37 @@ public class SVGDOMRenderer extends StructuredRenderer
             return false;
     }
 
-    private void addRadialGradient(BackgroundImageGradient bgimage, Rectangle bgarea, Element dest)
+    /**
+     * Adds a gradient to the background with repetitions.
+     * 
+     * @param img the gradient image to be added.
+     * @param bb the background bounding box
+     * @param clipped the clipping box
+     * @param bgWrap target DOM element
+     */
+    private void addGradient(BackgroundImageGradient img, Rectangle bb, Rectangle clipped, Element bgWrap)
+    {
+        BackgroundRepeater rep = new BackgroundRepeater();
+        final Gradient grad = img.getGradient();
+        final Rectangle pos = img.getComputedPosition();
+        if (grad instanceof LinearGradient)
+        {
+            rep.repeatImage(bb, pos, clipped, img.isRepeatX(), img.isRepeatY(),
+                    (x, y) -> addLinearGradient((BackgroundImageGradient) img, x + bb.x, y + bb.y, bgWrap));
+        }
+        else if (grad instanceof RadialGradient)
+        {
+            rep.repeatImage(bb, pos, clipped, img.isRepeatX(), img.isRepeatY(),
+                    (x, y) -> addRadialGradient((BackgroundImageGradient) img, x + bb.x, y + bb.y, bgWrap));
+        }
+    }
+    
+    private void addRadialGradient(BackgroundImageGradient bgimage, float absx, float absy, Element dest)
     {
         RadialGradient grad = (RadialGradient) bgimage.getGradient();
         Rectangle bgsize = bgimage.getComputedPosition();
-        bgsize.x += bgarea.x;
-        bgsize.y += bgarea.y;
+        bgsize.x = absx;
+        bgsize.y = absy;
         
         final String url = "cssbox-gradient-" + (idcounter++);
         final Element defs = createElement("defs");
@@ -868,12 +888,12 @@ public class SVGDOMRenderer extends StructuredRenderer
         dest.appendChild(createRect(bgsize.x, bgsize.y, bgsize.width, bgsize.height, style));
     }
     
-    private void addLinearGradient(BackgroundImageGradient bgimage, Rectangle bgarea, Element dest)
+    private void addLinearGradient(BackgroundImageGradient bgimage, float absx, float absy, Element dest)
     {
         LinearGradient grad = (LinearGradient) bgimage.getGradient();
         Rectangle bgsize = bgimage.getComputedPosition();
-        bgsize.x += bgarea.x;
-        bgsize.y += bgarea.y;
+        bgsize.x = absx;
+        bgsize.y = absy;
         // generate code
         String url = "cssbox-gradient-" + idcounter;
         idcounter++;
