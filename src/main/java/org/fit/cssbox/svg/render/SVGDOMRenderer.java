@@ -247,22 +247,6 @@ public class SVGDOMRenderer extends StructuredRenderer
         Element bgWrap = createElement("g"); //background wrapper
         boolean bgUsed = false;
 
-        /*final CSSProperty.BackgroundImage bgImageSpec = eb.getStyle().getProperty("background-image");
-        if (bgImageSpec == CSSProperty.BackgroundImage.gradient)
-        {
-            TermFunction.Gradient gradFunction = eb.getStyle().getValue(TermFunction.Gradient.class, "background-image");
-            if (gradFunction instanceof TermFunction.LinearGradient)
-            {
-                addLinearGradient(eb, (TermFunction.LinearGradient) gradFunction, bgWrap);
-                bgUsed = true;
-            }
-            else if (gradFunction instanceof TermFunction.RadialGradient)
-            {
-                addRadialGradient(eb, (TermFunction.RadialGradient) gradFunction, bgWrap);
-                bgUsed = true;
-            }
-        }*/
-        
         Rectangle bb = eb.getAbsoluteBorderBounds();
         if (eb instanceof Viewport)
         {
@@ -280,30 +264,28 @@ public class SVGDOMRenderer extends StructuredRenderer
                 bgUsed = true;
             }
     
-            // bitmap image background
+            // bitmap or gradient image backgrounds
             if (bg.getBackgroundImages() != null && bg.getBackgroundImages().size() > 0)
             {
-                final BackgroundBitmap bitmap = new BackgroundBitmap(eb);
-                for (BackgroundImage img : bg.getBackgroundImages())
+                BackgroundBitmap bitmap = null;
+                for (int i = bg.getBackgroundImages().size() - 1; i >= 0; i--)
                 {
+                    BackgroundImage img = bg.getBackgroundImages().get(i);
                     if (img instanceof BackgroundImageImage)
                     {
+                        if (bitmap == null)
+                            bitmap = new BackgroundBitmap(eb);
                         bitmap.addBackgroundImage((BackgroundImageImage) img);
                     }
-                }
-                if (bitmap.getBufferedImage() != null)
-                {
-                    bgWrap.appendChild(createImage(bb.x, bb.y, bb.width, bb.height, bitmap.getBufferedImage()));
-                    bgUsed = true;
-                }            
-            }
-            // gradient background
-            if (bg.getBackgroundImages() != null && bg.getBackgroundImages().size() > 0)
-            {
-                for (BackgroundImage img : bg.getBackgroundImages())
-                {
-                    if (img instanceof BackgroundImageGradient)
+                    else if (img instanceof BackgroundImageGradient)
                     {
+                        //flush eventual bitmaps
+                        if (bitmap != null && bitmap.getBufferedImage() != null)
+                        {
+                            bgWrap.appendChild(createImage(bb.x, bb.y, bb.width, bb.height, bitmap.getBufferedImage()));
+                            bitmap = null;
+                        }
+                        //insert the gradient
                         Gradient grad = ((BackgroundImageGradient) img).getGradient();
                         if (grad instanceof LinearGradient)
                         {
@@ -315,6 +297,12 @@ public class SVGDOMRenderer extends StructuredRenderer
                         }
                     }
                 }
+                //flush eventual bitmaps
+                if (bitmap != null && bitmap.getBufferedImage() != null)
+                {
+                    bgWrap.appendChild(createImage(bb.x, bb.y, bb.width, bb.height, bitmap.getBufferedImage()));
+                }
+                bgUsed = true;
             }
         }
 
