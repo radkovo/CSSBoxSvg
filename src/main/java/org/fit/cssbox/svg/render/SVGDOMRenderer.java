@@ -844,15 +844,13 @@ public class SVGDOMRenderer extends StructuredRenderer
         
         final String url = "cssbox-gradient-" + (idcounter++);
         final Element defs = createElement("defs");
-        final Element image;
-        image = createElement("radialGradient");
-
-        // geterate the SVG element for gradient
-        image.setAttribute("r", String.valueOf(grad.getEfficientRx()) + "%");
-        image.setAttribute("cx", String.valueOf(grad.getCx()) + "%");
-        image.setAttribute("cy", String.valueOf(grad.getCy()) + "%");
-        //image.setAttribute("fx", String.valueOf(grad.fx) + "%");
-        //image.setAttribute("fy", String.valueOf(grad.fy) + "%");
+        final Element image = createElement("radialGradient");
+        image.setAttribute("gradientUnits", "userSpaceOnUse");
+        if (grad.isRepeating())
+            image.setAttribute("spreadMethod", "repeat");
+        image.setAttribute("r", String.valueOf(grad.getEfficientRx()));
+        image.setAttribute("cx", String.valueOf(grad.getCx() + bgsize.x));
+        image.setAttribute("cy", String.valueOf(grad.getCy() + bgsize.y));
         image.setAttribute("id", url);
         for (int i = 0; i < grad.getStops().size(); i++)
         {
@@ -864,38 +862,27 @@ public class SVGDOMRenderer extends StructuredRenderer
                     ");stop-opacity:" + (cc.getAlpha() / 255.0f));
             image.appendChild(stop);
         }
+        
+        if (!grad.isCircle())
+        {
+            // scale Y to achieve desired radius ratio
+            float scaleY = 1.0f;
+            if (grad.getRx() > 0)
+                scaleY = grad.getRy() / grad.getRx();
+            String trans = "" 
+                   + "translate(" + grad.getCx() + "," + grad.getCy() + ") "
+                   + "scale(1," + scaleY + ") "
+                   + "translate(" + (-grad.getCx()) + "," + (-grad.getCy()) + ")";
+            image.setAttribute("gradientTransform", trans);
+        }
 
         defs.appendChild(image);
         dest.appendChild(defs);
+        
         String style = "stroke:none;fill-opacity:1;fill:url(#" + url + ");";
-        String clip = "cssbox-clip-" + idcounter;
-        Element clipPath = createElement("clipPath");
-        clipPath.setAttribute("id", clip);
-
-        clipPath.appendChild(createRect(bgsize.x, bgsize.y, bgsize.width, bgsize.height, ""));
-        dest.appendChild(clipPath);
 
         // generate the background element
-        // additionally, a clip element is generated
-        /*if (grad.isCircle())
-        {
-            float max = Math.max(iw, ih);
-            double x = (max == iw ? ix : ix - ((max - iw) * grad.cx / 100));
-            double y = (max == ih ? iy : iy - ((max - ih) * grad.cy / 100));
-            Element e = createRect(x, y, max, max, style);
-            e.setAttribute("clip-path", "url(#" + clip + ")");
-            dest.appendChild(e);
-        }
-        else
-        {
-            //   float max = Math.max(iw, ih);
-            double x = (grad.newWidth == iw ? ix : ix - ((grad.newWidth - iw) * grad.cx / 100));
-            double y = (grad.newHeight == ih ? iy : iy - ((grad.newHeight - ih) * grad.cy / 100));
-
-            Element e = createRect(x, y, grad.newWidth, grad.newHeight, style);
-            e.setAttribute("clip-path", "url(#" + clip + ")");
-            dest.appendChild(e);
-        }*/
+        dest.appendChild(createRect(bgsize.x, bgsize.y, bgsize.width, bgsize.height, style));
     }
     
     private void addLinearGradient(BackgroundImageGradient bgimage, Rectangle bgarea, Element dest)
@@ -914,10 +901,10 @@ public class SVGDOMRenderer extends StructuredRenderer
         image.setAttribute("gradientUnits", "userSpaceOnUse");
         if (grad.isRepeating())
             image.setAttribute("spreadMethod", "repeat");
-        image.setAttribute("x1", String.valueOf(grad.getX1() + bgsize.x) + "px");
-        image.setAttribute("y1", String.valueOf(grad.getY1() + bgsize.y) + "px");
-        image.setAttribute("x2", String.valueOf(grad.getEfficientX2() + bgsize.x) + "px");
-        image.setAttribute("y2", String.valueOf(grad.getEfficientY2() + bgsize.y) + "px");
+        image.setAttribute("x1", String.valueOf(grad.getX1() + bgsize.x));
+        image.setAttribute("y1", String.valueOf(grad.getY1() + bgsize.y));
+        image.setAttribute("x2", String.valueOf(grad.getEfficientX2() + bgsize.x));
+        image.setAttribute("y2", String.valueOf(grad.getEfficientY2() + bgsize.y));
         image.setAttribute("id", url);
         for (int i = 0; i < grad.getStops().size(); i++)
         {
