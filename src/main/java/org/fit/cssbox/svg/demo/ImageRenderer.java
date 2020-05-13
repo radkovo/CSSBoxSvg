@@ -34,6 +34,7 @@ import org.fit.cssbox.io.DefaultDocumentSource;
 import org.fit.cssbox.io.DocumentSource;
 import org.fit.cssbox.layout.BrowserConfig;
 import org.fit.cssbox.layout.Dimension;
+import org.fit.cssbox.layout.Rectangle;
 import org.fit.cssbox.layout.Viewport;
 import org.fit.cssbox.svg.render.SVGDOMRenderer;
 import org.w3c.dom.Document;
@@ -137,7 +138,8 @@ public class ImageRenderer
         engine.getConfig().setLoadBackgroundImages(loadBackgroundImages);
         defineLogicalFonts(engine.getConfig());
         
-        engine.createLayout(windowSize);
+        //create the layout but do not render
+        engine.createLayout(windowSize, new Rectangle(windowSize), false);
 
         Writer w = new OutputStreamWriter(out, "utf-8");
         writeSVG(engine.getViewport(), w);
